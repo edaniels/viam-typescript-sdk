@@ -1,5 +1,5 @@
 import type { JsonValue, Struct } from '@bufbuild/protobuf';
-import common from './gen/common/v1/common_pb';
+import type { GeoPoint } from './gen/common/v1/common_pb';
 
 export interface Options {
   requestLogger?: (req: unknown) => void;
@@ -14,11 +14,19 @@ export interface Resource {
   doCommand(command: Struct): Promise<JsonValue>;
 }
 
-// Common Protobuf Types
-
-export type ResourceName = common.ResourceName;
-export type GeoGeometry = common.GeoGeometry;
-export type GeoPoint = common.GeoPoint;
+export type {
+  Capsule,
+  GeoGeometry,
+  GeoPoint,
+  GeometriesInFrame,
+  Geometry,
+  Orientation,
+  Pose,
+  PoseInFrame,
+  RectangularPrism, ResourceName, Sphere, Transform,
+  Vector3,
+  WorldState
+} from './gen/common/v1/common_pb';
 
 export const isValidGeoPoint = (value: GeoPoint) => {
   const { latitude, longitude } = value;
@@ -30,18 +38,3 @@ export const isValidGeoPoint = (value: GeoPoint) => {
     Number.isNaN(longitude)
   );
 };
-
-// Spatial Math
-export type Vector3 = common.Vector3;
-export type Orientation = common.Orientation;
-
-// Motion
-export type Pose = common.Pose;
-export type PoseInFrame = common.PoseInFrame;
-export type Transform = common.Transform;
-export type WorldState = common.WorldState;
-export type GeometriesInFrame = common.GeometriesInFrame;
-export type Geometry = common.Geometry;
-export type Sphere = common.Sphere;
-export type RectangularPrism = common.RectangularPrism;
-export type Capsule = common.Capsule;

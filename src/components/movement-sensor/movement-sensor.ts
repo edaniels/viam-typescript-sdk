@@ -1,9 +1,13 @@
-import type { Resource, Orientation, StructType, Vector3 } from '../../types';
-import pb from '../../gen/component/movementsensor/v1/movementsensor_pb';
+import type { JsonValue, Struct } from '@bufbuild/protobuf';
+import type { Orientation, Resource, Vector3 } from '../../types';
 
-export type MovementSensorPosition = pb.GetPositionResponse;
-export type MovementSensorProperties = pb.GetPropertiesResponse;
-export type MovementSensorAccuracy = pb.GetAccuracyResponse;
+import type {
+  GetAccuracyResponse as MovementSensorAccuracy,
+  GetPositionResponse as MovementSensorPosition,
+  GetPropertiesResponse as MovementSensorProperties,
+} from '../../gen/component/movementsensor/v1/movementsensor_pb';
+
+
 
 /**
  * Represents any sensor that reports information about the robot's direction,
@@ -41,5 +45,7 @@ export interface MovementSensor extends Resource {
   getLinearAcceleration(extra?: Struct): Promise<Vector3>;
 
   /** Return the readings of a sensor. */
-  getReadings(extra?: Struct): Promise<Record<string, unknown>>;
+  getReadings(extra?: Struct): Promise<Record<string, JsonValue>>;
 }
+
+export {type GetAccuracyResponse as MovementSensorAccuracy, type GetPositionResponse as MovementSensorPosition, type GetPropertiesResponse as MovementSensorProperties} from '../../gen/component/movementsensor/v1/movementsensor_pb';

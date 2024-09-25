@@ -1,7 +1,8 @@
-import type { Resource, StructType, Vector3 } from '../../types';
-import pb from '../../gen/component/base/v1/base_pb';
+import type { Struct } from '@bufbuild/protobuf';
+import type { Resource, Vector3 } from '../../types';
 
-export type BaseProperties = pb.GetPropertiesResponse;
+import type { GetPropertiesResponse as BaseProperties } from '../../gen/component/base/v1/base_pb';
+
 
 /** Represents a physical base of a robot. */
 export interface Base extends Resource {
@@ -13,7 +14,7 @@ export interface Base extends Resource {
    * @param mmPerSec - Movement speed, in millimeters per second.
    */
   moveStraight(
-    distanceMm: number,
+    distanceMm: bigint,
     mmPerSec: number,
     extra?: Struct
   ): Promise<void>;
@@ -61,3 +62,5 @@ export interface Base extends Resource {
   /** Return the base's properties. */
   getProperties(extra?: Struct): Promise<BaseProperties>;
 }
+
+export {type GetPropertiesResponse as BaseProperties} from '../../gen/component/base/v1/base_pb';

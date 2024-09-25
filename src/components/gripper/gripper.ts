@@ -1,3 +1,4 @@
+import type { Struct } from '@bufbuild/protobuf';
 import type { Resource } from '../../types';
 
 /** Represents a physical robotic gripper. */

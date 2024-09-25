@@ -1,9 +1,9 @@
 import { createPromiseClient, type PromiseClient, type Transport } from '@connectrpc/connect';
 import { BillingService } from '../gen/app/v1/billing_connect';
-import pb from '../gen/app/v1/billing_pb';
+import type { GetCurrentMonthUsageResponse as PBGetCurrentMonthUsageResponse } from '../gen/app/v1/billing_pb';
 
 type GetCurrentMonthUsageResponse =
-  Partial<pb.GetCurrentMonthUsageResponse> & {
+  Partial<PBGetCurrentMonthUsageResponse> & {
     start?: Date;
     end?: Date;
   };
@@ -17,7 +17,7 @@ export class BillingClient {
 
   async getCurrentMonthUsage(orgId: string) {
     const result: GetCurrentMonthUsageResponse = await this.client.getCurrentMonthUsage({
-      orgId: orgId,
+      orgId,
     });
     result.start = result.startDate?.toDate();
     result.end = result.endDate?.toDate();
@@ -25,21 +25,21 @@ export class BillingClient {
   }
 
   async getOrgBillingInformation(orgId: string) {
-    return await this.client.getOrgBillingInformation({
-      orgId: orgId,
+    return this.client.getOrgBillingInformation({
+      orgId,
     });
   }
 
   async getInvoicesSummary(orgId: string) {
-    return await this.client.getInvoicesSummary({
-      orgId: orgId,
+    return this.client.getInvoicesSummary({
+      orgId,
     });
   }
 
   async getInvoicePdf(id: string, orgId: string) {
     const pdfParts = this.client.getInvoicePdf({
-      id: id,
-      orgId: orgId,
+      id,
+      orgId,
     });
     const chunks = [];
     for await (const pdfPart of pdfParts) {

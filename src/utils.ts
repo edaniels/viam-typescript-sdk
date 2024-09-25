@@ -1,7 +1,7 @@
 import { Struct, type JsonValue, type PartialMessage } from '@bufbuild/protobuf';
 import type { CallOptions } from '@connectrpc/connect';
 import { apiVersion } from './api-version';
-import common, { DoCommandRequest, DoCommandResponse } from './gen/common/v1/common_pb';
+import { DoCommandRequest, DoCommandResponse } from './gen/common/v1/common_pb';
 import type { Options } from './types';
 
 export const clientHeaders = new Headers({
@@ -17,7 +17,7 @@ export const doCommandFromClient = async function doCommandFromClient(
   command: Struct,
   options: Options = {}
 ): Promise<JsonValue> {
-  const request = new common.DoCommandRequest({
+  const request = new DoCommandRequest({
     name,
     command: new Struct(command),
   });

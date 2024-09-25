@@ -1,7 +1,7 @@
 import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { ArmService } from '../../gen/component/arm/v1/arm_connect';
-import pb from '../../gen/component/arm/v1/arm_pb';
+import { JointPositions } from '../../gen/component/arm/v1/arm_pb';
 import type { RobotClient } from '../../robot';
 import type { Options, Pose } from '../../types';
 import { doCommandFromClient } from '../../utils';
@@ -24,7 +24,7 @@ export class ArmClient implements Arm {
   }
 
   async getEndPosition(extra = {}) {
-    const request = new pb.GetEndPositionRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -40,7 +40,7 @@ export class ArmClient implements Arm {
   }
 
   async moveToPosition(pose: Pose, extra = {}) {
-    const request = new pb.MoveToPositionRequest({
+    const request = ({
       name: this.name,
       to: pose,
       extra: new Struct(extra),
@@ -52,11 +52,11 @@ export class ArmClient implements Arm {
   }
 
   async moveToJointPositions(jointPositionsList: number[], extra = {}) {
-    const newJointPositions = new pb.JointPositions({
+    const newJointPositions = new JointPositions({
       values: jointPositionsList,
     });
 
-    const request = new pb.MoveToJointPositionsRequest({
+    const request = ({
       name: this.name,
       positions: newJointPositions,
       extra: new Struct(extra),
@@ -68,7 +68,7 @@ export class ArmClient implements Arm {
   }
 
   async getJointPositions(extra = {}) {
-    const request = new pb.GetJointPositionsRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -85,7 +85,7 @@ export class ArmClient implements Arm {
   }
 
   async stop(extra = {}) {
-    const request = new pb.StopRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -96,7 +96,7 @@ export class ArmClient implements Arm {
   }
 
   async isMoving() {
-    const request = new pb.IsMovingRequest({
+    const request = ({
       name: this.name,
     });
 

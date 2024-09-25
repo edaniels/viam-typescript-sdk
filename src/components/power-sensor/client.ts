@@ -1,16 +1,12 @@
-import type { JsonValue } from '@bufbuild/protobuf';
+import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
-import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 import {
   GetReadingsRequest,
-  GetReadingsResponse,
 } from '../../gen/common/v1/common_pb';
-import type { PowerSensorService } from '../../gen/component/powersensor/v1/powersensor_connect';
-import pb from '../../gen/component/powersensor/v1/powersensor_pb';
-import { PowerSensorServiceClient } from '../../gen/component/powersensor/v1/powersensor_pb_service';
+import { PowerSensorService } from '../../gen/component/powersensor/v1/powersensor_connect';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
-import { doCommandFromClient, promisify } from '../../utils';
+import { doCommandFromClient } from '../../utils';
 import type { PowerSensor } from './power-sensor';
 
 /**
@@ -25,71 +21,65 @@ export class PowerSensorClient implements PowerSensor {
   private readonly options: Options;
 
   constructor(client: RobotClient, name: string, options: Options = {}) {
-    this.client = client.createServiceClient(PowerSensorServiceClient);
+    this.client = client.createServiceClient(PowerSensorService);
     this.name = name;
     this.options = options;
   }
 
   async getVoltage(extra = {}) {
-    const request = new pb.GetVoltageRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetVoltageRequest,
-      pb.GetVoltageResponse
-    >(powersensorService.getVoltage.bind(powersensorService), request);
+    const response = await this.client.getVoltage(request);
 
-    return [response.getVolts(), response.getIsAc()] as const;
+    return [response.volts, response.isAc] as const;
   }
 
   async getCurrent(extra = {}) {
-    const request = new pb.GetCurrentRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetCurrentRequest,
-      pb.GetCurrentResponse
-    >(powersensorService.getCurrent.bind(powersensorService), request);
+    const response = await this.client.getCurrent(request);
 
-    return [response.getAmperes(), response.getIsAc()] as const;
+    return [response.amperes, response.isAc] as const;
   }
 
   async getPower(extra = {}) {
-    const request = new pb.GetPowerRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<pb.GetPowerRequest, pb.GetPowerResponse>(
-      powersensorService.getPower.bind(powersensorService),
-      request
-    );
-
-    return response.getWatts();
+    return (await this.client.getPower(request)).watts;
   }
 
   async getReadings(extra = {}) {
-    const request = new GetReadingsRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new GetReadingsRequest({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<GetReadingsRequest, GetReadingsResponse>(
-      powersensorService.getReadings.bind(powersensorService),
-      request
-    );
+    const response = await this.client.getReadings(request);
 
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of response.getReadingsMap().entries()) {
-      result[key] = value.toJavaScript();
+    const result: Record<string, JsonValue> = {};
+    for (const key of Object.keys(response.readings)) {
+      const value = response.readings[key];
+      if (!value) {
+        continue;
+      }
+      result[key] = value.toJson();
     }
     return result;
   }

@@ -1,12 +1,8 @@
 import { createPromiseClient, type PromiseClient, type Transport } from '@connectrpc/connect';
 import { MLTrainingService } from '../gen/app/mltraining/v1/ml_training_connect';
-import pb from '../gen/app/mltraining/v1/ml_training_pb';
 
-type ValueOf<T> = T[keyof T];
-export const { ModelType } = pb;
-export type ModelType = ValueOf<typeof pb.ModelType>;
-export const { TrainingStatus } = pb;
-export type TrainingStatus = ValueOf<typeof pb.TrainingStatus>;
+import { ModelType, TrainingStatus } from '../gen/app/mltraining/v1/ml_training_pb';
+
 
 export class MlTrainingClient {
   private client: PromiseClient<typeof MLTrainingService>;
@@ -67,3 +63,5 @@ export class MlTrainingClient {
     await this.client.deleteCompletedTrainingJob({ id });
   }
 }
+
+export {ModelType, TrainingStatus} from '../gen/app/mltraining/v1/ml_training_pb';

@@ -1,4 +1,4 @@
-import type { StructType } from '../../types';
+import type { JsonValue, Struct } from '@bufbuild/protobuf';
 import type { Sensor } from '../sensor';
 
 /** Represents any sensor that reports voltage, current, and/or power */
@@ -10,5 +10,5 @@ export interface PowerSensor extends Sensor {
   /** Get Power in watts */
   getPower(extra?: Struct): Promise<number>;
   /** Return the readings of a sensor. */
-  getReadings(extra?: Struct): Promise<Record<string, unknown>>;
+  getReadings(extra?: Struct): Promise<Record<string, JsonValue>>;
 }

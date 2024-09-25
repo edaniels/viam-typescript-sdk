@@ -1,12 +1,9 @@
-import type { JsonValue } from '@bufbuild/protobuf';
+import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
-import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-import type { GripperService } from '../../gen/component/gripper/v1/gripper_connect';
-import pb from '../../gen/component/gripper/v1/gripper_pb';
-import { GripperServiceClient } from '../../gen/component/gripper/v1/gripper_pb_service';
+import { GripperService } from '../../gen/component/gripper/v1/gripper_connect';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
-import { doCommandFromClient, promisify } from '../../utils';
+import { doCommandFromClient } from '../../utils';
 import type { Gripper } from './gripper';
 
 /**
@@ -20,62 +17,52 @@ export class GripperClient implements Gripper {
   private readonly options: Options;
 
   constructor(client: RobotClient, name: string, options: Options = {}) {
-    this.client = client.createServiceClient(GripperServiceClient);
+    this.client = client.createServiceClient(GripperService);
     this.name = name;
     this.options = options;
   }
 
   async open(extra = {}) {
-    const request = new pb.OpenRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    await promisify<pb.OpenRequest, pb.OpenResponse>(
-      service.open.bind(service),
-      request
-    );
+    await this.client.open(request);
   }
 
   async grab(extra = {}) {
-    const request = new pb.GrabRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    await promisify<pb.GrabRequest, pb.GrabResponse>(
-      service.grab.bind(service),
-      request
-    );
+    await this.client.grab(request);
   }
 
   async stop(extra = {}) {
-    const request = new pb.StopRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    await promisify<pb.StopRequest, pb.StopResponse>(
-      service.stop.bind(service),
-      request
-    );
+    await this.client.stop(request);
   }
 
   async isMoving() {
-    const request = new pb.IsMovingRequest();
-    request.setName(this.name);
+    const request = ({
+      name: this.name,
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<pb.IsMovingRequest, pb.IsMovingResponse>(
-      service.isMoving.bind(service),
-      request
-    );
-
-    return response.getIsMoving();
+    return (await this.client.isMoving(request)).isMoving;
   }
 
   async doCommand(command: Struct): Promise<JsonValue> {

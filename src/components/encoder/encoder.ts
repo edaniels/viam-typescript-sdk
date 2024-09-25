@@ -1,11 +1,17 @@
+import type { Struct } from '@bufbuild/protobuf';
 import type { Resource } from '../../types';
-import pb from '../../gen/component/encoder/v1/encoder_pb';
 
-export type EncoderProperties = pb.GetPropertiesResponse;
+import type {
+  GetPropertiesResponse as EncoderProperties
+} from '../../gen/component/encoder/v1/encoder_pb';
 
-type ValueOf<T> = T[keyof T];
-export const EncoderPositionType = pb.PositionType;
-export type EncoderPositionType = ValueOf<typeof pb.PositionType>;
+import {
+  PositionType as EncoderPositionType
+} from '../../gen/component/encoder/v1/encoder_pb';
+
+
+
+
 
 /** Represents a physical encoder. */
 export interface Encoder extends Resource {
@@ -27,3 +33,5 @@ export interface Encoder extends Resource {
     extra?: Struct
   ): Promise<readonly [number, EncoderPositionType]>;
 }
+
+export {PositionType as EncoderPositionType, type GetPropertiesResponse as EncoderProperties} from '../../gen/component/encoder/v1/encoder_pb';

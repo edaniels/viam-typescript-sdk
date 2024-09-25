@@ -22,7 +22,7 @@ import { MovementSensorService } from '../gen/component/movementsensor/v1/moveme
 import { PowerSensorService } from '../gen/component/powersensor/v1/powersensor_connect';
 import { ServoService } from '../gen/component/servo/v1/servo_connect';
 import { RobotService } from '../gen/robot/v1/robot_connect';
-import proto from '../gen/robot/v1/robot_pb';
+import { DiscoveryQuery, RestartModuleRequest, Status, TransformPCDRequest, TransformPoseRequest } from '../gen/robot/v1/robot_pb';
 import { MotionService } from '../gen/service/motion/v1/motion_connect';
 import { NavigationService } from '../gen/service/navigation/v1/navigation_connect';
 import { SensorsService } from '../gen/service/sensors/v1/sensors_connect';
@@ -578,11 +578,11 @@ export class RobotClient extends EventDispatcher implements Robot {
   }
 
   async cancelOperation(id: string) {
-    await this.robotService.cancelOperation({ id: id });
+    await this.robotService.cancelOperation({ id });
   }
 
   async blockForOperation(id: string) {
-    await this.robotService.blockForOperation({ id: id });
+    await this.robotService.blockForOperation({ id });
   }
 
   async stopAll() {
@@ -602,7 +602,7 @@ export class RobotClient extends EventDispatcher implements Robot {
     destination: string,
     supplementalTransforms: Transform[]
   ) {
-    const request = new proto.TransformPoseRequest({
+    const request = new TransformPoseRequest({
       source,
       destination,
       supplementalTransforms,
@@ -622,7 +622,7 @@ export class RobotClient extends EventDispatcher implements Robot {
     source: string,
     destination: string
   ) {
-    const request = new proto.TransformPCDRequest({
+    const request = new TransformPCDRequest({
       pointCloudPcd: pointCloudPCD,
       source,
       destination,
@@ -632,7 +632,7 @@ export class RobotClient extends EventDispatcher implements Robot {
 
   // DISCOVERY
 
-  async discoverComponents(queries: proto.DiscoveryQuery[]) {
+  async discoverComponents(queries: DiscoveryQuery[]) {
     return (await this.robotService.discoverComponents({
       queries,
     })).discovery;
@@ -641,7 +641,7 @@ export class RobotClient extends EventDispatcher implements Robot {
   // GET CLOUD METADATA
 
   async getCloudMetadata() {
-    return await this.robotService.getCloudMetadata({});
+    return this.robotService.getCloudMetadata({});
   }
 
   // RESOURCES
@@ -665,7 +665,7 @@ export class RobotClient extends EventDispatcher implements Robot {
   streamStatus(
     resourceNames: ResourceName[] = [],
     durationMs = 500
-  ): AsyncIterable<proto.Status[]> {
+  ): AsyncIterable<Status[]> {
     return map(this.robotService.streamStatus({
       resourceNames,
       every: new Duration({
@@ -677,7 +677,7 @@ export class RobotClient extends EventDispatcher implements Robot {
   // MODULES
 
   async restartModule(moduleId?: string, moduleName?: string) {
-    const request = new proto.RestartModuleRequest();
+    const request = new RestartModuleRequest();
     if (moduleId !== undefined) {
       request.idOrName.case = "moduleId";
       request.idOrName.value = moduleId;

@@ -1,7 +1,6 @@
 import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { MotionService } from '../../gen/service/motion/v1/motion_connect';
-import pb from '../../gen/service/motion/v1/motion_pb';
 import type { RobotClient } from '../../robot';
 import type {
   GeoGeometry,
@@ -46,7 +45,7 @@ export class MotionClient implements Motion {
     constraints?: Constraints,
     extra = {}
   ) {
-    const request = new pb.MoveRequest({
+    const request = ({
       name: this.name,
       destination,
       componentName,
@@ -68,7 +67,7 @@ export class MotionClient implements Motion {
     obstacles?: Geometry[],
     extra = {}
   ) {
-    const request = new pb.MoveOnMapRequest({
+    const request = ({
       name: this.name,
       destination,
       componentName,
@@ -93,7 +92,7 @@ export class MotionClient implements Motion {
     boundingRegionsList?: GeoGeometry[],
     extra = {}
   ) {
-    const request = new pb.MoveOnGlobeRequest({
+    const request = ({
       name: this.name,
       destination,
       componentName,
@@ -111,7 +110,7 @@ export class MotionClient implements Motion {
   }
 
   async stopPlan(componentName: ResourceName, extra = {}) {
-    const request = new pb.StopPlanRequest({
+    const request = ({
       name: this.name,
       componentName,
       extra: new Struct(extra),
@@ -128,7 +127,7 @@ export class MotionClient implements Motion {
     executionId?: string,
     extra = {}
   ) {
-    const request = new pb.GetPlanRequest({
+    const request = ({
       name: this.name,
       componentName,
       lastPlanOnly,
@@ -142,7 +141,7 @@ export class MotionClient implements Motion {
   }
 
   async listPlanStatuses(onlyActivePlans?: boolean, extra = {}) {
-    const request = new pb.ListPlanStatusesRequest({
+    const request = ({
       name: this.name,
       onlyActivePlans,
       extra: new Struct(extra),
@@ -159,7 +158,7 @@ export class MotionClient implements Motion {
     supplementalTransforms: Transform[],
     extra = {}
   ) {
-    const request = new pb.GetPoseRequest({
+    const request = ({
       name: this.name,
       componentName,
       destinationFrame,

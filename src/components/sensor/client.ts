@@ -1,17 +1,10 @@
-import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-
-import { SensorServiceClient } from '../../gen/component/sensor/v1/sensor_pb_service';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
 
-import type { JsonValue } from '@bufbuild/protobuf';
+import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
-import {
-  GetReadingsRequest,
-  GetReadingsResponse,
-} from '../../gen/common/v1/common_pb';
-import type { SensorService } from '../../gen/component/sensor/v1/sensor_connect';
-import { doCommandFromClient, promisify } from '../../utils';
+import { SensorService } from '../../gen/component/sensor/v1/sensor_connect';
+import { doCommandFromClient } from '../../utils';
 import type { Sensor } from './sensor';
 
 /**
@@ -25,26 +18,28 @@ export class SensorClient implements Sensor {
   private readonly options: Options;
 
   constructor(client: RobotClient, name: string, options: Options = {}) {
-    this.client = client.createServiceClient(SensorServiceClient);
+    this.client = client.createServiceClient(SensorService);
     this.name = name;
     this.options = options;
   }
 
   async getReadings(extra = {}) {
-    const request = new GetReadingsRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<GetReadingsRequest, GetReadingsResponse>(
-      sensorService.getReadings.bind(sensorService),
-      request
-    );
+    const response = await this.client.getReadings(request);
 
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of response.getReadingsMap().entries()) {
-      result[key] = value.toJavaScript();
+    const result: Record<string, JsonValue> = {};
+    for (const key of Object.keys(response.readings)) {
+      const value = response.readings[key];
+      if (!value) {
+        continue;
+      }
+      result[key] = value.toJson();
     }
     return result;
   }

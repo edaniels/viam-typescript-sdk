@@ -1,3 +1,4 @@
+import type { Struct } from '@bufbuild/protobuf';
 import type { Resource } from '../../types';
 
 /** Represents a physical gantry that exists in three-dimensional space. */

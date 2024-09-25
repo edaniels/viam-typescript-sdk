@@ -30,7 +30,7 @@ export default class GRPCConnectionManager {
     const doHeartbeat = async () => {
       try {
         await this.client.getOperations({});
-      } catch (error) {
+      } catch {
         this.onDisconnect();
         return;
       }
@@ -38,7 +38,7 @@ export default class GRPCConnectionManager {
       if (worker) {
         worker.postMessage(this.heartbeatIntervalMs);
       } else {
-        setTimeout(() => doHeartbeat().catch(console.error), this.heartbeatIntervalMs);
+        setTimeout(async () => doHeartbeat().catch(console.error), this.heartbeatIntervalMs);
       }
     };
 

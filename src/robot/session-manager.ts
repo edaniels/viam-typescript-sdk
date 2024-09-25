@@ -1,6 +1,6 @@
 import { Code, ConnectError, createPromiseClient, type Transport } from '@connectrpc/connect';
 import { RobotService } from '../gen/robot/v1/robot_connect';
-import robotApi from '../gen/robot/v1/robot_pb';
+import { SendSessionHeartbeatRequest, StartSessionRequest } from '../gen/robot/v1/robot_pb';
 import { ConnectionClosedError } from '../rpc';
 import SessionTransport from './session-transport';
 
@@ -64,7 +64,7 @@ export default class SessionManager {
 
     let worker: Worker | undefined;
     const doHeartbeat = async () => {
-      const sendHeartbeatReq = new robotApi.SendSessionHeartbeatRequest({
+      const sendHeartbeatReq = new SendSessionHeartbeatRequest({
         id: this.currentSessionID,
       });
       try {
@@ -82,7 +82,7 @@ export default class SessionManager {
       if (worker) {
         worker.postMessage(this.heartbeatIntervalMs);
       } else {
-        setTimeout(() => doHeartbeat().catch(console.error), this.heartbeatIntervalMs);
+        setTimeout(async () => doHeartbeat().catch(console.error), this.heartbeatIntervalMs);
       }
     };
 
@@ -114,7 +114,7 @@ export default class SessionManager {
 
     this.starting = new Promise<void>((resolve, reject) => {
       (async () => {
-        const startSessionReq = new robotApi.StartSessionRequest();
+        const startSessionReq = new StartSessionRequest();
         if (this.currentSessionID !== '') {
           startSessionReq.resume = this.currentSessionID;
         }
@@ -131,7 +131,7 @@ export default class SessionManager {
           throw error;
         }
 
-        const heartbeatWindow = resp.heartbeatWindow;
+        const {heartbeatWindow} = resp;
         if (!heartbeatWindow) {
           throw new Error('expected heartbeat window in response to start session');
         }

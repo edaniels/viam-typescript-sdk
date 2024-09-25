@@ -1,8 +1,8 @@
 import { createPromiseClient, type PromiseClient, type Transport } from '@connectrpc/connect';
 import { ProvisioningService } from '../gen/provisioning/v1/provisioning_connect';
-import pb from '../gen/provisioning/v1/provisioning_pb';
+import type { CloudConfig } from '../gen/provisioning/v1/provisioning_pb';
 
-export type CloudConfig = pb.CloudConfig;
+
 
 export class ProvisioningClient {
   private client: PromiseClient<typeof ProvisioningService>;
@@ -17,7 +17,7 @@ export class ProvisioningClient {
    * @returns The Smart Machine status
    */
   async getSmartMachineStatus() {
-    return await this.client.getSmartMachineStatus({});
+    return this.client.getSmartMachineStatus({});
   }
 
   /**
@@ -52,6 +52,8 @@ export class ProvisioningClient {
    * @returns A list of networks
    */
   async getNetworkList() {
-    return await this.client.getNetworkList({});
+    return this.client.getNetworkList({});
   }
 }
+
+export {type CloudConfig} from '../gen/provisioning/v1/provisioning_pb';

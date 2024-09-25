@@ -4,7 +4,7 @@ import {
   PackageType,
 } from '../gen/app/packages/v1/packages_pb';
 import { AppService } from '../gen/app/v1/app_connect';
-import * as pb from '../gen/app/v1/app_pb';
+import { APIKeyWithAuthorizations, Authorization, AuthorizedPermissions, CreateKeyFromExistingKeyAuthorizationsResponse, CreateKeyResponse, CreateModuleResponse, Fragment, FragmentVisibility, GetRobotPartLogsResponse, GetRobotPartResponse, ListOrganizationMembersResponse, Location, LocationAuth, Model, Module, Organization, OrganizationIdentity, OrganizationInvite, OrgDetails, RegistryItem, RegistryItemStatus, Robot, RobotPart, RobotPartHistoryEntry, RotateKeyResponse, RoverRentalRobot, Visibility } from '../gen/app/v1/app_pb';
 import type { LogEntry } from '../gen/common/v1/common_pb';
 
 /**
@@ -26,8 +26,8 @@ export const createAuth = (
   resourceType: string,
   identityType: string,
   resourceId: string
-): pb.Authorization => {
-  return new pb.Authorization({
+): Authorization => {
+  return new Authorization({
     authorizationType: 'role',
     identityId: entityId,
     identityType,
@@ -52,7 +52,7 @@ export const createAuthForNewAPIKey = (
   role: string,
   resourceType: string,
   resourceId: string
-): pb.Authorization => {
+): Authorization => {
   return createAuth(organizationId, '', role, resourceType, 'api-key', resourceId);
 };
 
@@ -68,8 +68,8 @@ export const createPermission = (
   resourceType: string,
   resourceId: string,
   permissions: string[]
-): pb.AuthorizedPermissions => {
-  return new pb.AuthorizedPermissions({
+): AuthorizedPermissions => {
+  return new AuthorizedPermissions({
     resourceType,
     resourceId,
     permissions,
@@ -101,7 +101,7 @@ export class AppClient {
    */
   async createOrganization(
     name: string
-  ): Promise<pb.Organization | undefined> {
+  ): Promise<Organization | undefined> {
     return (await this.client.createOrganization({ name })).organization;
   }
 
@@ -110,7 +110,7 @@ export class AppClient {
    *
    * @returns The organization list
    */
-  async listOrganizations(): Promise<pb.Organization[]> {
+  async listOrganizations(): Promise<Organization[]> {
     return (await this.client.listOrganizations({})).organizations;
   }
 
@@ -122,7 +122,7 @@ export class AppClient {
    */
   async getOrganizationsWithAccessToLocation(
     locationId: string
-  ): Promise<pb.OrganizationIdentity[]> {
+  ): Promise<OrganizationIdentity[]> {
     return (await this.client.getOrganizationsWithAccessToLocation({ locationId })).organizationIdentities;
   }
 
@@ -134,7 +134,7 @@ export class AppClient {
    */
   async listOrganizationsByUser(
     userId: string
-  ): Promise<pb.OrgDetails[]> {
+  ): Promise<OrgDetails[]> {
     return (await this.client.listOrganizationsByUser({ userId })).orgs;
   }
 
@@ -146,7 +146,7 @@ export class AppClient {
    */
   async getOrganization(
     organizationId: string
-  ): Promise<pb.Organization | undefined> {
+  ): Promise<Organization | undefined> {
     return (await this.client.getOrganization({ organizationId })).organization;
   }
 
@@ -178,7 +178,7 @@ export class AppClient {
     publicNamespace?: string,
     region?: string,
     cid?: string
-  ): Promise<pb.Organization | undefined> {
+  ): Promise<Organization | undefined> {
     return (await this.client.updateOrganization({
       organizationId,
       name,
@@ -206,7 +206,7 @@ export class AppClient {
    */
   async listOrganizationMembers(
     organizationId: string
-  ): Promise<pb.ListOrganizationMembersResponse> {
+  ): Promise<ListOrganizationMembersResponse> {
     return this.client.listOrganizationMembers({ organizationId });
   }
 
@@ -223,9 +223,9 @@ export class AppClient {
   async createOrganizationInvite(
     organizationId: string,
     email: string,
-    authorizations: pb.Authorization[],
+    authorizations: Authorization[],
     sendEmailInvite = true
-  ): Promise<pb.OrganizationInvite | undefined> {
+  ): Promise<OrganizationInvite | undefined> {
     return (await this.client.createOrganizationInvite({
       organizationId,
       email,
@@ -246,9 +246,9 @@ export class AppClient {
   async updateOrganizationInviteAuthorizations(
     organizationId: string,
     email: string,
-    addAuthsList: pb.Authorization[],
-    removeAuthsList: pb.Authorization[]
-  ): Promise<pb.OrganizationInvite | undefined> {
+    addAuthsList: Authorization[],
+    removeAuthsList: Authorization[]
+  ): Promise<OrganizationInvite | undefined> {
     return (await this.client.updateOrganizationInviteAuthorizations({
       organizationId,
       email,
@@ -287,7 +287,7 @@ export class AppClient {
   async resendOrganizationInvite(
     organizationId: string,
     email: string
-  ): Promise<pb.OrganizationInvite | undefined> {
+  ): Promise<OrganizationInvite | undefined> {
     return (await this.client.resendOrganizationInvite({ organizationId, email })).invite;
   }
 
@@ -304,7 +304,7 @@ export class AppClient {
     organizationId: string,
     name: string,
     parentLocationId?: string
-  ): Promise<pb.Location | undefined> {
+  ): Promise<Location | undefined> {
     return (await this.client.createLocation({ organizationId, name, parentLocationId })).location;
   }
 
@@ -314,7 +314,7 @@ export class AppClient {
    * @param locId The ID of the location to query.
    * @returns The location object
    */
-  async getLocation(locId: string): Promise<pb.Location | undefined> {
+  async getLocation(locId: string): Promise<Location | undefined> {
     const resp = await this.client.getLocation({
       locationId: locId,
     });
@@ -336,7 +336,7 @@ export class AppClient {
     name?: string,
     parentLocId?: string,
     region?: string
-  ): Promise<pb.Location | undefined> {
+  ): Promise<Location | undefined> {
     return (await this.client.updateLocation({
       locationId: locId,
       name,
@@ -360,7 +360,7 @@ export class AppClient {
    * @param organizationId The ID of the organization to query
    * @returns A list of locations under the organization
    */
-  async listLocations(organizationId: string): Promise<pb.Location[]> {
+  async listLocations(organizationId: string): Promise<Location[]> {
     return (await this.client.listLocations({ organizationId })).locations;
   }
 
@@ -392,7 +392,7 @@ export class AppClient {
    */
   async locationAuth(
     locId: string
-  ): Promise<pb.LocationAuth | undefined> {
+  ): Promise<LocationAuth | undefined> {
     return (await this.client.locationAuth({ locationId: locId })).auth;
   }
 
@@ -404,7 +404,7 @@ export class AppClient {
    */
   async createLocationSecret(
     locId: string
-  ): Promise<pb.LocationAuth | undefined> {
+  ): Promise<LocationAuth | undefined> {
     return (await this.client.createLocationSecret({ locationId: locId })).auth;
   }
 
@@ -424,7 +424,7 @@ export class AppClient {
    * @param id The ID of the robot
    * @returns The `Robot` object
    */
-  async getRobot(id: string): Promise<pb.Robot | undefined> {
+  async getRobot(id: string): Promise<Robot | undefined> {
     return (await this.client.getRobot({ id })).robot;
   }
 
@@ -436,7 +436,7 @@ export class AppClient {
    */
   async getRoverRentalRobots(
     orgId: string
-  ): Promise<pb.RoverRentalRobot[]> {
+  ): Promise<RoverRentalRobot[]> {
     return (await this.client.getRoverRentalRobots({ orgId })).robots;
   }
 
@@ -446,7 +446,7 @@ export class AppClient {
    * @param robotId The ID of the robot to query
    * @returns The list of `RobotPart` objects associated with the robot
    */
-  async getRobotParts(robotId: string): Promise<pb.RobotPart[]> {
+  async getRobotParts(robotId: string): Promise<RobotPart[]> {
     return (await this.client.getRobotParts({ robotId })).parts;
   }
 
@@ -456,7 +456,7 @@ export class AppClient {
    * @param id The ID of the requested robot part
    * @returns The robot part and a its json config
    */
-  async getRobotPart(id: string): Promise<pb.GetRobotPartResponse> {
+  async getRobotPart(id: string): Promise<GetRobotPartResponse> {
     return this.client.getRobotPart({ id });
   }
 
@@ -478,7 +478,7 @@ export class AppClient {
     filter?: string,
     levels?: string[],
     pageToken = ''
-  ): Promise<pb.GetRobotPartLogsResponse> {
+  ): Promise<GetRobotPartLogsResponse> {
     return this.client.getRobotPartLogs({
       id,
       filter,
@@ -509,7 +509,7 @@ export class AppClient {
       filter,
     })
     for await (const entry of stream) {
-      entry.logs.forEach((log) => queue.push(log));
+      for (const log of entry.logs) { queue.push(log); }
     }
   }
 
@@ -521,7 +521,7 @@ export class AppClient {
    */
   async getRobotPartHistory(
     id: string
-  ): Promise<pb.RobotPartHistoryEntry[]> {
+  ): Promise<RobotPartHistoryEntry[]> {
     return (await this.client.getRobotPartHistory({ id })).history;
   }
 
@@ -537,7 +537,7 @@ export class AppClient {
     id: string,
     name: string,
     robotConfig: Struct
-  ): Promise<pb.RobotPart | undefined> {
+  ): Promise<RobotPart | undefined> {
     return (await this.client.updateRobotPart({ id, name, robotConfig })).part;
   }
 
@@ -569,7 +569,7 @@ export class AppClient {
    */
   async getRobotAPIKeys(
     robotId: string
-  ): Promise<pb.APIKeyWithAuthorizations[]> {
+  ): Promise<APIKeyWithAuthorizations[]> {
     return (await this.client.getRobotAPIKeys({ robotId })).apiKeys;
   }
 
@@ -599,7 +599,7 @@ export class AppClient {
    */
   async createRobotPartSecret(
     partId: string
-  ): Promise<pb.RobotPart | undefined> {
+  ): Promise<RobotPart | undefined> {
     return (await this.client.createRobotPartSecret({ partId })).part;
   }
 
@@ -619,7 +619,7 @@ export class AppClient {
    * @param locId The ID of the location to list robots for
    * @returns The list of robot objects
    */
-  async listRobots(locId: string): Promise<pb.Robot[]> {
+  async listRobots(locId: string): Promise<Robot[]> {
     return (await this.client.listRobots({ locationId: locId })).robots;
   }
 
@@ -646,7 +646,7 @@ export class AppClient {
     robotId: string,
     locId: string,
     name: string
-  ): Promise<pb.Robot | undefined> {
+  ): Promise<Robot | undefined> {
     return (await this.client.updateRobot({
       id: robotId,
       location: locId,
@@ -680,8 +680,8 @@ export class AppClient {
   async listFragments(
     organizationId: string,
     publicOnly = true,
-    fragmentVisibility: pb.FragmentVisibility[] = []
-  ): Promise<pb.Fragment[]> {
+    fragmentVisibility: FragmentVisibility[] = []
+  ): Promise<Fragment[]> {
     return (await this.client.listFragments({ organizationId, showPublic: publicOnly, fragmentVisibility })).fragments;
   }
 
@@ -691,7 +691,7 @@ export class AppClient {
    * @param id The ID of the fragment to look up
    * @returns The requested fragment
    */
-  async getFragment(id: string): Promise<pb.Fragment | undefined> {
+  async getFragment(id: string): Promise<Fragment | undefined> {
     return (await this.client.getFragment({ id })).fragment;
   }
 
@@ -707,7 +707,7 @@ export class AppClient {
     organizationId: string,
     name: string,
     config: Struct
-  ): Promise<pb.Fragment | undefined> {
+  ): Promise<Fragment | undefined> {
     return (await this.client.createFragment({ organizationId, name, config })).fragment;
   }
 
@@ -732,8 +732,8 @@ export class AppClient {
     name: string,
     config: Struct,
     makePublic?: boolean,
-    visibility?: pb.FragmentVisibility
-  ): Promise<pb.Fragment | undefined> {
+    visibility?: FragmentVisibility
+  ): Promise<Fragment | undefined> {
     return (await this.client.updateFragment({
       id,
       name,
@@ -816,7 +816,7 @@ export class AppClient {
    * @param oldAuth The existing authorization
    * @param newAuth The new authorization
    */
-  async changeRole(oldAuthorization: pb.Authorization, newAuthorization: pb.Authorization) {
+  async changeRole(oldAuthorization: Authorization, newAuthorization: Authorization) {
     await this.client.changeRole({ oldAuthorization, newAuthorization })
   }
 
@@ -831,7 +831,7 @@ export class AppClient {
   async listAuthorizations(
     organizationId: string,
     resourceIds?: string[]
-  ): Promise<pb.Authorization[]> {
+  ): Promise<Authorization[]> {
     return (await this.client.listAuthorizations({ organizationId, resourceIds })).authorizations;
   }
 
@@ -842,8 +842,8 @@ export class AppClient {
    * @returns A filtered list of the authorized permissions
    */
   async checkPermissions(
-    permissions: pb.AuthorizedPermissions[]
-  ): Promise<pb.AuthorizedPermissions[]> {
+    permissions: AuthorizedPermissions[]
+  ): Promise<AuthorizedPermissions[]> {
     return (await this.client.checkPermissions({ permissions })).authorizedPermissions;
   }
 
@@ -855,7 +855,7 @@ export class AppClient {
    */
   async getRegistryItem(
     itemId: string
-  ): Promise<pb.RegistryItem | undefined> {
+  ): Promise<RegistryItem | undefined> {
     return (await this.client.getRegistryItem({ itemId })).item;
   }
 
@@ -890,7 +890,7 @@ export class AppClient {
     itemId: string,
     type: PackageType,
     description: string,
-    visibility: pb.Visibility
+    visibility: Visibility
   ) {
     await this.client.updateRegistryItem({
       itemId,
@@ -919,13 +919,13 @@ export class AppClient {
   async listRegistryItems(
     organizationId: string,
     types: PackageType[],
-    visibilities: pb.Visibility[],
+    visibilities: Visibility[],
     platforms: string[],
-    statuses: pb.RegistryItemStatus[],
+    statuses: RegistryItemStatus[],
     searchTerm?: string,
     pageToken?: string
-  ): Promise<pb.RegistryItem[]> {
-    const req = new pb.ListRegistryItemsRequest({
+  ): Promise<RegistryItem[]> {
+    const req = ({
       organizationId,
       types,
       visibilities,
@@ -958,7 +958,7 @@ export class AppClient {
   async createModule(
     organizationId: string,
     name: string
-  ): Promise<pb.CreateModuleResponse> {
+  ): Promise<CreateModuleResponse> {
     return this.client.createModule({
       organizationId,
       name,
@@ -978,10 +978,10 @@ export class AppClient {
    */
   async updateModule(
     moduleId: string,
-    visibility: pb.Visibility,
+    visibility: Visibility,
     url: string,
     description: string,
-    models: pb.Model[],
+    models: Model[],
     entrypoint: string
   ): Promise<string> {
     return (await this.client.updateModule({
@@ -1000,7 +1000,7 @@ export class AppClient {
    * @param moduleId The ID of the module
    * @returns The requested module
    */
-  async getModule(moduleId: string): Promise<pb.Module | undefined> {
+  async getModule(moduleId: string): Promise<Module | undefined> {
     return (await this.client.getModule({ moduleId })).module;
   }
 
@@ -1010,7 +1010,7 @@ export class AppClient {
    * @param organizationId The ID of the organization to query
    * @returns The organization's modules
    */
-  async listModules(organizationId: string): Promise<pb.Module[]> {
+  async listModules(organizationId: string): Promise<Module[]> {
     return (await this.client.listModules({ organizationId })).modules;
   }
 
@@ -1023,9 +1023,9 @@ export class AppClient {
    * @returns The new key and ID
    */
   async createKey(
-    authorizations: pb.Authorization[],
+    authorizations: Authorization[],
     name?: string
-  ): Promise<pb.CreateKeyResponse> {
+  ): Promise<CreateKeyResponse> {
     return this.client.createKey({ name, authorizations });
   }
 
@@ -1035,7 +1035,7 @@ export class AppClient {
    * @param id The ID of the key to delete
    */
   async deleteKey(id: string) {
-    return await this.client.deleteKey({ id });
+    return this.client.deleteKey({ id });
   }
 
   /**
@@ -1046,7 +1046,7 @@ export class AppClient {
    */
   async listKeys(
     orgId: string
-  ): Promise<pb.APIKeyWithAuthorizations[]> {
+  ): Promise<APIKeyWithAuthorizations[]> {
     return (await this.client.listKeys({ orgId })).apiKeys;
   }
 
@@ -1056,7 +1056,7 @@ export class AppClient {
    * @param id The ID of the key to rotate
    * @returns The updated key and ID
    */
-  async rotateKey(id: string): Promise<pb.RotateKeyResponse> {
+  async rotateKey(id: string): Promise<RotateKeyResponse> {
     return this.client.rotateKey({ id });
   }
 
@@ -1068,7 +1068,7 @@ export class AppClient {
    */
   async createKeyFromExistingKeyAuthorizations(
     id: string
-  ): Promise<pb.CreateKeyFromExistingKeyAuthorizationsResponse> {
+  ): Promise<CreateKeyFromExistingKeyAuthorizationsResponse> {
     return this.client.createKeyFromExistingKeyAuthorizations({ id });
   }
 }

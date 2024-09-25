@@ -1,6 +1,6 @@
 import type { JsonValue, Struct } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
-import type { GenericService } from '../../gen/component/generic/v1/generic_connect';
+import { GenericService } from '../../gen/component/generic/v1/generic_connect';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
 import { doCommandFromClient } from '../../utils';
@@ -17,7 +17,7 @@ export class GenericClient implements Generic {
   private readonly options: Options;
 
   constructor(client: RobotClient, name: string, options: Options = {}) {
-    this.client = client.createServiceClient(GenericServiceClient);
+    this.client = client.createServiceClient(GenericService);
     this.name = name;
     this.options = options;
   }

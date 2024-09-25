@@ -1,7 +1,6 @@
 import type { JsonValue, Struct } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { SLAMService } from '../../gen/service/slam/v1/slam_connect';
-import pb from '../../gen/service/slam/v1/slam_pb';
 import { RobotClient } from '../../robot';
 import type { Options } from '../../types';
 import { doCommandFromClient } from '../../utils';
@@ -24,7 +23,7 @@ export class SlamClient implements Slam {
   }
 
   async getPosition() {
-    const request = new pb.GetPositionRequest({
+    const request = ({
       name: this.name,
     });
 
@@ -34,7 +33,7 @@ export class SlamClient implements Slam {
   }
 
   getPointCloudMap = async (returnEditedMap?: boolean): Promise<Uint8Array> => {
-    const request = new pb.GetPointCloudMapRequest({
+    const request = ({
       name: this.name,
       returnEditedMap,
     });
@@ -49,7 +48,7 @@ export class SlamClient implements Slam {
   };
 
   getInternalState = async (): Promise<Uint8Array> => {
-    const request = new pb.GetInternalStateRequest({
+    const request = ({
       name: this.name,
     });
     this.options.requestLogger?.(request);
@@ -63,7 +62,7 @@ export class SlamClient implements Slam {
   };
 
   async getProperties() {
-    const request = new pb.GetPropertiesRequest({
+    const request = ({
       name: this.name,
     });
 

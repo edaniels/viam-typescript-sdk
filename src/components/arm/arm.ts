@@ -1,7 +1,7 @@
 import type { Struct } from '@bufbuild/protobuf';
-import type { JointPositions } from '../../gen/component/arm/v1/arm_pb';
-
+import type { JointPositions as ArmJointPositions } from '../../gen/component/arm/v1/arm_pb';
 import type { Pose, Resource } from '../../types';
+
 
 /** Represents a physical robot arm that exists in three-dimensional space. */
 export interface Arm extends Resource {
@@ -27,7 +27,7 @@ export interface Arm extends Resource {
   ) => Promise<void>;
 
   /** Gets the current position of each joint. */
-  getJointPositions: (extra?: Struct) => Promise<JointPositions>;
+  getJointPositions: (extra?: Struct) => Promise<ArmJointPositions>;
 
   /** Stops the motion of the arm. */
   stop: (extra?: Struct) => Promise<void>;
@@ -35,3 +35,5 @@ export interface Arm extends Resource {
   /** Get if the arm is currently moving. */
   isMoving: () => Promise<boolean>;
 }
+
+export {type JointPositions as ArmJointPositions} from '../../gen/component/arm/v1/arm_pb';

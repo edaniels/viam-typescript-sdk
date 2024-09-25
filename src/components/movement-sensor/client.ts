@@ -1,16 +1,12 @@
-import type { JsonValue } from '@bufbuild/protobuf';
+import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
-import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 import {
   GetReadingsRequest,
-  GetReadingsResponse,
 } from '../../gen/common/v1/common_pb';
-import type { MovementSensorService } from '../../gen/component/movementsensor/v1/movementsensor_connect';
-import pb from '../../gen/component/movementsensor/v1/movementsensor_pb';
-import { MovementSensorServiceClient } from '../../gen/component/movementsensor/v1/movementsensor_pb_service';
+import { MovementSensorService } from '../../gen/component/movementsensor/v1/movementsensor_connect';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
-import { doCommandFromClient, promisify } from '../../utils';
+import { doCommandFromClient } from '../../utils';
 import type { MovementSensor } from './movement-sensor';
 
 /**
@@ -24,181 +20,144 @@ export class MovementSensorClient implements MovementSensor {
   private readonly options: Options;
 
   constructor(client: RobotClient, name: string, options: Options = {}) {
-    this.client = client.createServiceClient(MovementSensorServiceClient);
+    this.client = client.createServiceClient(MovementSensorService);
     this.name = name;
     this.options = options;
   }
 
   async getLinearVelocity(extra = {}) {
-    const request = new pb.GetLinearVelocityRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetLinearVelocityRequest,
-      pb.GetLinearVelocityResponse
-    >(
-      movementsensorService.getLinearVelocity.bind(movementsensorService),
-      request
-    );
+    const response = await this.client.getLinearVelocity(request);
 
-    const vel = response.getLinearVelocity();
+    const vel = response.linearVelocity;
     if (!vel) {
       throw new Error('no linear velocity');
     }
 
-    return vel.toObject();
+    return vel;
   }
 
   async getAngularVelocity(extra = {}) {
-    const request = new pb.GetAngularVelocityRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetAngularVelocityRequest,
-      pb.GetAngularVelocityResponse
-    >(
-      movementsensorService.getAngularVelocity.bind(movementsensorService),
-      request
-    );
+    const response = await this.client.getAngularVelocity(request);
 
-    const ang = response.getAngularVelocity();
+    const ang = response.angularVelocity;
     if (!ang) {
       throw new Error('no angular velocity');
     }
 
-    return ang.toObject();
+    return ang;
   }
 
   async getCompassHeading(extra = {}) {
-    const request = new pb.GetCompassHeadingRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetCompassHeadingRequest,
-      pb.GetCompassHeadingResponse
-    >(
-      movementsensorService.getCompassHeading.bind(movementsensorService),
-      request
-    );
-
-    return response.getValue();
+    return (await this.client.getCompassHeading(request)).value;
   }
 
   async getOrientation(extra = {}) {
-    const request = new pb.GetOrientationRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetOrientationRequest,
-      pb.GetOrientationResponse
-    >(
-      movementsensorService.getOrientation.bind(movementsensorService),
-      request
-    );
+    const response = await this.client.getOrientation(request);
 
-    const ori = response.getOrientation();
+    const ori = response.orientation;
     if (!ori) {
       throw new Error('no orientation');
     }
 
-    return ori.toObject();
+    return ori;
   }
 
   async getPosition(extra = {}) {
-    const request = new pb.GetPositionRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetPositionRequest,
-      pb.GetPositionResponse
-    >(movementsensorService.getPosition.bind(movementsensorService), request);
-
-    return response.toObject();
+    return this.client.getPosition(request);
   }
 
   async getProperties(extra = {}) {
-    const request = new pb.GetPropertiesRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetPropertiesRequest,
-      pb.GetPropertiesResponse
-    >(movementsensorService.getProperties.bind(movementsensorService), request);
-
-    return response.toObject();
+    return this.client.getProperties(request);
   }
 
   async getAccuracy(extra = {}) {
-    const request = new pb.GetAccuracyRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetAccuracyRequest,
-      pb.GetAccuracyResponse
-    >(movementsensorService.getAccuracy.bind(movementsensorService), request);
-
-    return response.toObject();
+    return this.client.getAccuracy(request);
   }
 
   async getLinearAcceleration(extra = {}) {
-    const request = new pb.GetLinearAccelerationRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = ({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<
-      pb.GetLinearAccelerationRequest,
-      pb.GetLinearAccelerationResponse
-    >(
-      movementsensorService.getLinearAcceleration.bind(movementsensorService),
-      request
-    );
+    const response = await this.client.getLinearAcceleration(request);
 
-    const acc = response.getLinearAcceleration();
+    const acc = response.linearAcceleration;
     if (!acc) {
       throw new Error('no linear acceleration');
     }
 
-    return acc.toObject();
+    return acc;
   }
 
   async getReadings(extra = {}) {
-    const request = new GetReadingsRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new GetReadingsRequest({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    const response = await promisify<GetReadingsRequest, GetReadingsResponse>(
-      movementsensorService.getReadings.bind(movementsensorService),
-      request
-    );
+    const response = await this.client.getReadings(request);
 
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of response.getReadingsMap().entries()) {
-      result[key] = value.toJavaScript();
+    const result: Record<string, JsonValue> = {};
+    for (const key of Object.keys(response.readings)) {
+      const value = response.readings[key];
+      if (!value) {
+        continue;
+      }
+      result[key] = value.toJson();
     }
     return result;
   }

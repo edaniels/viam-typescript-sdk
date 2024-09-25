@@ -1,5 +1,6 @@
-import type { Resource } from '../../types';
+import type { Struct } from '@bufbuild/protobuf';
 import pb from '../../gen/component/inputcontroller/v1/input_controller_pb';
+import type { Resource } from '../../types';
 
 export type InputControllerEvent = pb.Event;
 

@@ -1,19 +1,15 @@
 import { Timestamp, type JsonValue } from '@bufbuild/protobuf';
 import { createPromiseClient, type PromiseClient, type Transport } from '@connectrpc/connect';
 import { DataService } from '../gen/app/data/v1/data_connect';
-import dataPb from '../gen/app/data/v1/data_pb';
+import { BinaryID, CaptureInterval, CaptureMetadata, Filter, Order, TagsFilter } from '../gen/app/data/v1/data_pb';
 import { DatasetService } from '../gen/app/dataset/v1/dataset_connect';
-import datasetPb from '../gen/app/dataset/v1/dataset_pb';
+import type { Dataset as PBDataset } from '../gen/app/dataset/v1/dataset_pb';
 import { DataSyncService } from '../gen/app/datasync/v1/data_sync_connect';
-import dataSyncPb from '../gen/app/datasync/v1/data_sync_pb';
+import { DataCaptureUploadRequest, DataType, SensorData, SensorMetadata, UploadMetadata } from '../gen/app/datasync/v1/data_sync_pb';
 
-type ValueOf<T> = T[keyof T];
-export const { Order } = dataPb;
-export type Order = ValueOf<typeof dataPb.Order>;
-export type BinaryID = dataPb.BinaryID;
-export type UploadMetadata = dataSyncPb.UploadMetadata;
 
-export type FilterOptions = Partial<dataPb.Filter> & {
+
+export type FilterOptions = Partial<Filter> & {
   endTime?: Date;
   startTime?: Date;
   tags?: string[];
@@ -21,12 +17,12 @@ export type FilterOptions = Partial<dataPb.Filter> & {
 
 interface TabularData {
   data?: JsonValue;
-  metadata?: dataPb.CaptureMetadata;
+  metadata?: CaptureMetadata;
   timeRequested?: Date;
   timeReceived?: Date;
 }
 
-type Dataset = Partial<datasetPb.Dataset> & {
+type Dataset = Partial<PBDataset> & {
   created?: Date;
 };
 
@@ -87,21 +83,21 @@ export class DataClient {
    *   last-returned page ID.
    */
   async tabularDataByFilter(
-    filter?: dataPb.Filter,
+    filter?: Filter,
     limit?: bigint,
     sortOrder?: Order,
     last = '',
     countOnly = false,
     includeInternalData = false
   ) {
-    const dataReq = new dataPb.DataRequest({
+    const dataReq = ({
       filter,
       limit,
       sortOrder,
       last,
     });
 
-    const req = new dataPb.TabularDataByFilterRequest({
+    const req = ({
       dataRequest: dataReq,
       countOnly,
       includeInternalData,
@@ -116,7 +112,7 @@ export class DataClient {
         const mdIndex = data.metadataIndex;
         const metadata =
           mdListLength !== 0 && mdIndex >= mdListLength
-            ? new dataPb.CaptureMetadata()
+            ? new CaptureMetadata()
             : response.metadata[mdIndex];
         return {
           data: data.data?.toJson(),
@@ -158,7 +154,7 @@ export class DataClient {
    *   last-returned page ID.
    */
   async binaryDataByFilter(
-    filter?: dataPb.Filter,
+    filter?: Filter,
     limit?: bigint,
     sortOrder?: Order,
     last = '',
@@ -166,14 +162,14 @@ export class DataClient {
     countOnly = false,
     includeInternalData = false
   ) {
-    const dataReq = new dataPb.DataRequest({
+    const dataReq = ({
       filter,
       limit,
       sortOrder,
       last,
     });
 
-    const req = new dataPb.BinaryDataByFilterRequest({
+    const req = ({
       dataRequest: dataReq,
       includeBinary,
       countOnly,
@@ -225,7 +221,7 @@ export class DataClient {
    * @returns The number of items deleted
    */
   async deleteBinaryDataByFilter(
-    filter?: dataPb.Filter,
+    filter?: Filter,
     includeInternalData = true
   ) {
     return (await this.dataClient.deleteBinaryDataByFilter({ filter, includeInternalData })).deletedCount;
@@ -262,7 +258,7 @@ export class DataClient {
    * @param filter Optional `pb.Filter` specifying binary data to add tags to.
    *   No `filter` implies all binary data.
    */
-  async addTagsToBinaryDataByFilter(tags: string[], filter?: dataPb.Filter) {
+  async addTagsToBinaryDataByFilter(tags: string[], filter?: Filter) {
     await this.dataClient.addTagsToBinaryDataByFilter({
       tags,
       filter,
@@ -295,7 +291,7 @@ export class DataClient {
    */
   async removeTagsFromBinaryDataByFilter(
     tags: string[],
-    filter?: dataPb.Filter
+    filter?: Filter
   ) {
     return (await this.dataClient.removeTagsFromBinaryDataByFilter({
       tags,
@@ -310,8 +306,8 @@ export class DataClient {
    *   No `filter` implies all data.
    * @returns The list of tags
    */
-  async tagsByFilter(filter?: dataPb.Filter) {
-    return (await this.dataClient.tagsByFilter({ filter }));
+  async tagsByFilter(filter?: Filter) {
+    return (this.dataClient.tagsByFilter({ filter }));
   }
 
   /**
@@ -367,7 +363,7 @@ export class DataClient {
    *   No `filter` implies all labels.
    * @returns The list of bounding box labels
    */
-  async boundingBoxLabelsByFilter(filter?: dataPb.Filter) {
+  async boundingBoxLabelsByFilter(filter?: Filter) {
     return (await this.dataClient.boundingBoxLabelsByFilter({
       filter,
     })).labels;
@@ -522,24 +518,24 @@ export class DataClient {
       throw new Error('dataRequestTimes and data lengths must be equal.');
     }
 
-    const metadata = new dataSyncPb.UploadMetadata({
+    const metadata = new UploadMetadata({
       partId,
       componentType,
       componentName,
       methodName,
-      type: dataSyncPb.DataType.TABULAR_SENSOR,
+      type: DataType.TABULAR_SENSOR,
       tags,
     });
 
-    const sensorContents: dataSyncPb.SensorData[] = [];
+    const sensorContents: SensorData[] = [];
     for (const [i, data] of tabularData.entries()) {
-      const sensorMetadata = new dataSyncPb.SensorMetadata();
+      const sensorMetadata = new SensorMetadata();
       const dates = dataRequestTimes[i];
       if (dates) {
         sensorMetadata.timeRequested = Timestamp.fromDate(dates[0]);
         sensorMetadata.timeReceived = Timestamp.fromDate(dates[1]);
       }
-      sensorContents.push(new dataSyncPb.SensorData({
+      sensorContents.push(new SensorData({
         metadata: sensorMetadata,
         data: {
           case: "struct",
@@ -548,7 +544,7 @@ export class DataClient {
       }));
     }
 
-    const req = new dataSyncPb.DataCaptureUploadRequest({
+    const req = new DataCaptureUploadRequest({
       metadata,
       sensorContents,
     });
@@ -590,17 +586,17 @@ export class DataClient {
     dataRequestTimes: [Date, Date],
     tags?: string[]
   ) {
-    const metadata = new dataSyncPb.UploadMetadata({
+    const metadata = new UploadMetadata({
       partId,
       componentType,
       componentName,
       methodName,
-      type: dataSyncPb.DataType.BINARY_SENSOR,
+      type: DataType.BINARY_SENSOR,
       tags,
       fileExtension,
     });
 
-    const sensorData = new dataSyncPb.SensorData({
+    const sensorData = new SensorData({
       metadata: {
         timeRequested: Timestamp.fromDate(dataRequestTimes[0]),
         timeReceived: Timestamp.fromDate(dataRequestTimes[1]),
@@ -611,7 +607,7 @@ export class DataClient {
       }
     });
 
-    const req = new dataSyncPb.DataCaptureUploadRequest({
+    const req = new DataCaptureUploadRequest({
       metadata,
       sensorContents: [sensorData],
     });
@@ -620,11 +616,11 @@ export class DataClient {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  createFilter(options: FilterOptions): dataPb.Filter {
-    const filter = new dataPb.Filter(options);
+  createFilter(options: FilterOptions): Filter {
+    const filter = new Filter(options);
 
     if (options.startTime ?? options.endTime) {
-      const interval = new dataPb.CaptureInterval();
+      const interval = new CaptureInterval();
       if (options.startTime) {
         interval.start = Timestamp.fromDate(options.startTime);
       }
@@ -634,7 +630,7 @@ export class DataClient {
       filter.interval = interval;
     }
 
-    const tagsFilter = new dataPb.TagsFilter();
+    const tagsFilter = new TagsFilter();
     if (options.tags) {
       tagsFilter.tags = options.tags;
       filter.tagsFilter = tagsFilter;
@@ -643,3 +639,6 @@ export class DataClient {
     return filter;
   }
 }
+
+export { type BinaryID, type Order } from '../gen/app/data/v1/data_pb';
+export { type UploadMetadata } from '../gen/app/datasync/v1/data_sync_pb';

@@ -1,10 +1,14 @@
-import commonPB from '../../gen/common/v1/common_pb';
-import cameraPB from '../../gen/component/camera/v1/camera_pb';
-import pb from '../../gen/service/vision/v1/vision_pb';
+import { PointCloudObject } from '../../gen/common/v1/common_pb';
+import type { Image } from '../../gen/component/camera/v1/camera_pb';
+import type { Classification, Detection } from './types';
 
-export type Detection = pb.Detection;
-export type Classification = pb.Classification;
-export type PointCloudObject = commonPB.PointCloudObject;
+export type {
+  Classification, Detection
+} from '../../gen/service/vision/v1/vision_pb';
+
+export type {
+  PointCloudObject
+} from '../../gen/common/v1/common_pb';
 
 export interface Properties {
   /** Whether or not classifactions are supported by the vision service */
@@ -23,7 +27,7 @@ export interface CaptureAllOptions {
 }
 
 export interface CaptureAllResponse {
-  image: cameraPB.Image | undefined;
+  image: Image | undefined;
   classifications: Classification[];
   detections: Detection[];
   objectPointClouds: PointCloudObject[];

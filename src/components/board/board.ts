@@ -1,17 +1,18 @@
-import { type Duration as PBDuration } from 'google-protobuf/google/protobuf/duration_pb';
-import pb from '../../gen/component/board/v1/board_pb';
+import type { Duration, Struct } from '@bufbuild/protobuf';
 import type { Resource } from '../../types';
 
-type ValueOf<T> = T[keyof T];
-export const { PowerMode } = pb;
-export type PowerMode = ValueOf<typeof pb.PowerMode>;
+import type {
+  ReadAnalogReaderResponse as AnalogValue,
+} from '../../gen/component/board/v1/board_pb';
+import {
+  PowerMode,
+} from '../../gen/component/board/v1/board_pb';
+
 export interface Tick {
   pinName: string;
   high: boolean;
-  time: number;
+  time: bigint;
 }
-export type Duration = PBDuration;
-export type AnalogValue = pb.ReadAnalogReaderResponse;
 
 /**
  * Represents a physical general purpose compute board that contains various
@@ -46,7 +47,7 @@ export interface Board extends Resource {
    *
    * @param pin - The pin.
    */
-  getPWMFrequency(pin: string, extra?: Struct): Promise<number>;
+  getPWMFrequency(pin: string, extra?: Struct): Promise<bigint>;
   /**
    * Set the PWM frequency of the given pin of a board.
    *
@@ -56,7 +57,7 @@ export interface Board extends Resource {
    */
   setPWMFrequency(
     pin: string,
-    frequencyHz: number,
+    frequencyHz: bigint,
     extra?: Struct
   ): Promise<void>;
   /**
@@ -84,7 +85,7 @@ export interface Board extends Resource {
   getDigitalInterruptValue(
     digitalInterruptName: string,
     extra?: Struct
-  ): Promise<number>;
+  ): Promise<bigint>;
   /**
    * Stream digital interrupt ticks on the board.
    *
@@ -99,14 +100,14 @@ export interface Board extends Resource {
   /**
    * Set power mode of the board.
    *
-   * @param name - The name of the board.
    * @param powerMode - The requested power mode.
    * @param duration - The requested duration to stay in power mode.
    */
   setPowerMode(
-    name: string,
     powerMode: PowerMode,
     duration: Duration,
     extra?: Struct
   ): Promise<void>;
 }
+
+export { PowerMode, type ReadAnalogReaderResponse as AnalogValue } from '../../gen/component/board/v1/board_pb';

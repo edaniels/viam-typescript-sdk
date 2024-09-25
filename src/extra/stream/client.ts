@@ -1,7 +1,6 @@
 import type { PromiseClient } from '@connectrpc/connect';
 import { EventDispatcher, MachineConnectionEvent } from '../../events';
 import { StreamService } from '../../gen/stream/v1/stream_connect';
-import pb from '../../gen/stream/v1/stream_pb';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
 import type { Stream } from './stream';
@@ -46,12 +45,8 @@ export class StreamClient extends EventDispatcher implements Stream {
     });
   }
 
-  private get streamService() {
-    return this.client;
-  }
-
   async add(name: string) {
-    const request = new pb.AddStreamRequest({
+    const request = ({
       name: getValidSDPTrackName(name),
     });
     this.options.requestLogger?.(request);
@@ -68,8 +63,7 @@ export class StreamClient extends EventDispatcher implements Stream {
   }
 
   async remove(name: string) {
-    const { streamService } = this;
-    const request = new pb.RemoveStreamRequest({
+    const request = ({
       name: getValidSDPTrackName(name),
     });
     this.options.requestLogger?.(request);

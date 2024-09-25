@@ -1,7 +1,6 @@
 import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { NavigationService } from '../../gen/service/navigation/v1/navigation_connect';
-import pb from '../../gen/service/navigation/v1/navigation_pb';
 import { RobotClient } from '../../robot';
 import type { GeoPoint, Options } from '../../types';
 import { isValidGeoPoint } from '../../types';
@@ -26,7 +25,7 @@ export class NavigationClient implements Navigation {
   }
 
   async getMode(extra = {}) {
-    const request = new pb.GetModeRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -37,7 +36,7 @@ export class NavigationClient implements Navigation {
   }
 
   async setMode(mode: Mode, extra = {}) {
-    const request = new pb.SetModeRequest({
+    const request = ({
       name: this.name,
       mode,
       extra: new Struct(extra),
@@ -49,7 +48,7 @@ export class NavigationClient implements Navigation {
   }
 
   async getLocation(extra = {}) {
-    const request = new pb.GetLocationRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -68,7 +67,7 @@ export class NavigationClient implements Navigation {
   }
 
   async getWayPoints(extra = {}) {
-    const request = new pb.GetWaypointsRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -79,7 +78,7 @@ export class NavigationClient implements Navigation {
   }
 
   async addWayPoint(location: GeoPoint, extra = {}) {
-    const request = new pb.AddWaypointRequest({
+    const request = ({
       name: this.name,
       location,
       extra: new Struct(extra),
@@ -91,7 +90,7 @@ export class NavigationClient implements Navigation {
   }
 
   async removeWayPoint(id: string, extra = {}) {
-    const request = new pb.RemoveWaypointRequest({
+    const request = ({
       name: this.name,
       id,
       extra: new Struct(extra),
@@ -103,7 +102,7 @@ export class NavigationClient implements Navigation {
   }
 
   async getObstacles(extra = {}) {
-    const request = new pb.GetObstaclesRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -114,7 +113,7 @@ export class NavigationClient implements Navigation {
   }
 
   async getPaths(extra = {}) {
-    const request = new pb.GetPathsRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -125,7 +124,7 @@ export class NavigationClient implements Navigation {
   }
 
   async getProperties() {
-    const request = new pb.GetPropertiesRequest({
+    const request = ({
       name: this.name,
     });
 

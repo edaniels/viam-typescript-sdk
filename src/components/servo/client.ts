@@ -1,7 +1,6 @@
 import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { ServoService } from '../../gen/component/servo/v1/servo_connect';
-import pb from '../../gen/component/servo/v1/servo_pb';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
 import { doCommandFromClient } from '../../utils';
@@ -24,7 +23,7 @@ export class ServoClient implements Servo {
   }
 
   async move(angleDeg: number, extra = {}) {
-    const request = new pb.MoveRequest({
+    const request = ({
       name: this.name,
       angleDeg,
       extra: new Struct(extra),
@@ -36,7 +35,7 @@ export class ServoClient implements Servo {
   }
 
   async getPosition(extra = {}) {
-    const request = new pb.GetPositionRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -47,7 +46,7 @@ export class ServoClient implements Servo {
   }
 
   async stop(extra = {}) {
-    const request = new pb.StopRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -58,7 +57,7 @@ export class ServoClient implements Servo {
   }
 
   async isMoving() {
-    const request = new pb.IsMovingRequest({
+    const request = ({
       name: this.name,
     });
 

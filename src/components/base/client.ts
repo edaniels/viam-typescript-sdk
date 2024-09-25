@@ -1,7 +1,6 @@
-import type { JsonValue } from '@bufbuild/protobuf';
+import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { BaseService } from '../../gen/component/base/v1/base_connect';
-import pb from '../../gen/component/base/v1/base_pb';
 import type { RobotClient } from '../../robot';
 import type { Options, Vector3 } from '../../types';
 import { doCommandFromClient } from '../../utils';
@@ -24,7 +23,7 @@ export class BaseClient implements Base {
   }
 
   async moveStraight(distanceMm: bigint, mmPerSec: number, extra = {}) {
-    const request = new pb.MoveStraightRequest({
+    const request = ({
       name: this.name,
       mmPerSec,
       distanceMm,
@@ -37,7 +36,7 @@ export class BaseClient implements Base {
   }
 
   async spin(angleDeg: number, degsPerSec: number, extra = {}) {
-    const request = new pb.SpinRequest({
+    const request = ({
       name: this.name,
       angleDeg,
       degsPerSec,
@@ -50,7 +49,7 @@ export class BaseClient implements Base {
   }
 
   async setPower(linear: Vector3, angular: Vector3, extra = {}) {
-    const request = new pb.SetPowerRequest({
+    const request = ({
       name: this.name,
       linear,
       angular,
@@ -63,7 +62,7 @@ export class BaseClient implements Base {
   }
 
   async setVelocity(linear: Vector3, angular: Vector3, extra = {}) {
-    const request = new pb.SetVelocityRequest({
+    const request = ({
       name: this.name,
       linear,
       angular,
@@ -76,7 +75,7 @@ export class BaseClient implements Base {
   }
 
   async stop(extra = {}) {
-    const request = new pb.StopRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -87,7 +86,7 @@ export class BaseClient implements Base {
   }
 
   async isMoving() {
-    const request = new pb.IsMovingRequest({
+    const request = ({
       name: this.name,
     });
 
@@ -101,13 +100,13 @@ export class BaseClient implements Base {
   }
 
   async getProperties(extra = {}) {
-    const request = new pb.GetPropertiesRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
 
     this.options.requestLogger?.(request);
 
-    return await this.client.getProperties(request);
+    return this.client.getProperties(request);
   }
 }

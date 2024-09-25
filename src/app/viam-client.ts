@@ -72,8 +72,8 @@ export class ViamClient {
 
     // Get address if only ID was provided
     if (id !== undefined && host === undefined) {
-      const parts = await this.appClient?.getRobotParts(id);
-      const mainPart = parts?.find((part) => part.mainPart);
+      const parts = await this.appClient.getRobotParts(id);
+      const mainPart = parts.find((part) => part.mainPart);
       if (!mainPart) {
         throw new Error(
           `Could not find a main part for the machine with UUID: ${id}`
@@ -103,7 +103,7 @@ export class ViamClient {
       }
       if (locationId !== undefined) {
         // If we found the location, then attempt to get its secret
-        const location = await this.appClient?.getLocation(locationId);
+        const location = await this.appClient.getLocation(locationId);
         const secret = location?.auth?.secrets.find(
           (sec) => sec.state === SharedSecret_State.ENABLED
         );

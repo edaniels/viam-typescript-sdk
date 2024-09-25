@@ -11,7 +11,7 @@ export default class SessionTransport implements Transport {
 
   private async getSessionMetadata(): Promise<Headers> {
     try {
-      return this.sessionManager.getSessionMetadata();
+      return await this.sessionManager.getSessionMetadata();
     } catch (error) {
       if (error instanceof ConnectError && 
         error.code === Code.InvalidArgument && 

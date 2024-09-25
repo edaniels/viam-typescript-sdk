@@ -1,7 +1,6 @@
 import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { DataManagerService } from '../../gen/service/datamanager/v1/data_manager_connect.js';
-import pb from '../../gen/service/datamanager/v1/data_manager_pb.js';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
 import { doCommandFromClient } from '../../utils';
@@ -19,7 +18,7 @@ export class DataManagerClient implements DataManager {
   }
 
   async sync(extra = {}) {
-    const request = new pb.SyncRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });

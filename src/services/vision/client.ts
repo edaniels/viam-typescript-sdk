@@ -1,7 +1,7 @@
 import { Struct, type JsonValue } from '@bufbuild/protobuf';
 import type { PromiseClient } from '@connectrpc/connect';
 import { VisionService } from '../../gen/service/vision/v1/vision_connect';
-import pb from '../../gen/service/vision/v1/vision_pb';
+import { GetClassificationsFromCameraRequest, GetClassificationsRequest } from '../../gen/service/vision/v1/vision_pb';
 import type { MimeType } from '../../main';
 import type { RobotClient } from '../../robot';
 import type { Options } from '../../types';
@@ -26,7 +26,7 @@ export class VisionClient implements Vision {
   }
 
   async getDetectionsFromCamera(cameraName: string, extra = {}) {
-    const request = new pb.GetDetectionsFromCameraRequest({
+    const request = ({
       name: this.name,
       cameraName,
       extra: new Struct(extra),
@@ -44,7 +44,7 @@ export class VisionClient implements Vision {
     mimeType: MimeType,
     extra = {}
   ) {
-    const request = new pb.GetDetectionsRequest({
+    const request = ({
       name: this.name,
       image,
       width,
@@ -63,7 +63,7 @@ export class VisionClient implements Vision {
     count: number,
     extra = {}
   ) {
-    const request = new pb.GetClassificationsFromCameraRequest({
+    const request = new GetClassificationsFromCameraRequest({
       name: this.name,
       cameraName,
       n: count,
@@ -83,7 +83,7 @@ export class VisionClient implements Vision {
     count: number,
     extra = {}
   ) {
-    const request = new pb.GetClassificationsRequest({
+    const request = new GetClassificationsRequest({
       name: this.name,
       image,
       width,
@@ -99,7 +99,7 @@ export class VisionClient implements Vision {
   }
 
   async getObjectPointClouds(cameraName: string, extra = {}) {
-    const request = new pb.GetObjectPointCloudsRequest({
+    const request = ({
       name: this.name,
       cameraName,
       extra: new Struct(extra),
@@ -111,7 +111,7 @@ export class VisionClient implements Vision {
   }
 
   async getProperties(extra = {}) {
-    const request = new pb.GetPropertiesRequest({
+    const request = ({
       name: this.name,
       extra: new Struct(extra),
     });
@@ -136,7 +136,7 @@ export class VisionClient implements Vision {
     }: CaptureAllOptions,
     extra = {}
   ) {
-    const request = new pb.CaptureAllFromCameraRequest({
+    const request = ({
       name: this.name,
       cameraName,
       returnImage,

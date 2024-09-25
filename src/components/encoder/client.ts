@@ -1,10 +1,13 @@
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-import type { RobotClient } from '../../robot';
+import type { EncoderService } from '../../gen/component/encoder/v1/encoder_connect';
 import encoderApi from '../../gen/component/encoder/v1/encoder_pb';
-import { promisify, doCommandFromClient } from '../../utils';
-import type { Options, StructType } from '../../types';
 import { EncoderServiceClient } from '../../gen/component/encoder/v1/encoder_pb_service';
-import { type Encoder, EncoderPositionType } from './encoder';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
+import { doCommandFromClient, promisify } from '../../utils';
+import { EncoderPositionType, type Encoder } from './encoder';
 
 /**
  * A gRPC-web client for the Encoder component.
@@ -12,7 +15,7 @@ import { type Encoder, EncoderPositionType } from './encoder';
  * @group Clients
  */
 export class EncoderClient implements Encoder {
-  private client: EncoderServiceClient;
+  private client: PromiseClient<typeof EncoderService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -22,12 +25,7 @@ export class EncoderClient implements Encoder {
     this.options = options;
   }
 
-  private get encoderService() {
-    return this.client;
-  }
-
   async resetPosition(extra = {}) {
-    const { encoderService } = this;
     const request = new encoderApi.ResetPositionRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -41,7 +39,6 @@ export class EncoderClient implements Encoder {
   }
 
   async getProperties(extra = {}) {
-    const { encoderService } = this;
     const request = new encoderApi.GetPropertiesRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -59,7 +56,6 @@ export class EncoderClient implements Encoder {
     positionType: EncoderPositionType = EncoderPositionType.POSITION_TYPE_UNSPECIFIED,
     extra = {}
   ) {
-    const { encoderService } = this;
     const request = new encoderApi.GetPositionRequest();
     request.setName(this.name);
     request.setPositionType(positionType);
@@ -74,13 +70,7 @@ export class EncoderClient implements Encoder {
     return [response.getValue(), response.getPositionType()] as const;
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { encoderService } = this;
-    return doCommandFromClient(
-      encoderService,
-      this.name,
-      command,
-      this.options
-    );
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

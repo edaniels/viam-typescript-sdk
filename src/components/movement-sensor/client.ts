@@ -1,13 +1,16 @@
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-import type { RobotClient } from '../../robot';
-import { MovementSensorServiceClient } from '../../gen/component/movementsensor/v1/movementsensor_pb_service';
-import type { Options, StructType } from '../../types';
-import pb from '../../gen/component/movementsensor/v1/movementsensor_pb';
-import { promisify, doCommandFromClient } from '../../utils';
 import {
   GetReadingsRequest,
   GetReadingsResponse,
 } from '../../gen/common/v1/common_pb';
+import type { MovementSensorService } from '../../gen/component/movementsensor/v1/movementsensor_connect';
+import pb from '../../gen/component/movementsensor/v1/movementsensor_pb';
+import { MovementSensorServiceClient } from '../../gen/component/movementsensor/v1/movementsensor_pb_service';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
+import { doCommandFromClient, promisify } from '../../utils';
 import type { MovementSensor } from './movement-sensor';
 
 /**
@@ -16,7 +19,7 @@ import type { MovementSensor } from './movement-sensor';
  * @group Clients
  */
 export class MovementSensorClient implements MovementSensor {
-  private client: MovementSensorServiceClient;
+  private client: PromiseClient<typeof MovementSensorService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -26,12 +29,7 @@ export class MovementSensorClient implements MovementSensor {
     this.options = options;
   }
 
-  private get movementsensorService() {
-    return this.client;
-  }
-
   async getLinearVelocity(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetLinearVelocityRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -55,7 +53,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getAngularVelocity(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetAngularVelocityRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -79,7 +76,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getCompassHeading(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetCompassHeadingRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -98,7 +94,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getOrientation(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetOrientationRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -122,7 +117,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getPosition(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetPositionRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -138,7 +132,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getProperties(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetPropertiesRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -154,7 +147,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getAccuracy(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetAccuracyRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -170,7 +162,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getLinearAcceleration(extra = {}) {
-    const { movementsensorService } = this;
     const request = new pb.GetLinearAccelerationRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -194,7 +185,6 @@ export class MovementSensorClient implements MovementSensor {
   }
 
   async getReadings(extra = {}) {
-    const { movementsensorService } = this;
     const request = new GetReadingsRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -213,13 +203,7 @@ export class MovementSensorClient implements MovementSensor {
     return result;
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { movementsensorService } = this;
-    return doCommandFromClient(
-      movementsensorService,
-      this.name,
-      command,
-      this.options
-    );
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

@@ -1,9 +1,12 @@
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-import type { RobotClient } from '../../robot';
-import { MotorServiceClient } from '../../gen/component/motor/v1/motor_pb_service';
-import type { Options, StructType } from '../../types';
+import type { MotorService } from '../../gen/component/motor/v1/motor_connect';
 import motorApi from '../../gen/component/motor/v1/motor_pb';
-import { promisify, doCommandFromClient } from '../../utils';
+import { MotorServiceClient } from '../../gen/component/motor/v1/motor_pb_service';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
+import { doCommandFromClient, promisify } from '../../utils';
 import type { Motor } from './motor';
 
 /**
@@ -12,7 +15,7 @@ import type { Motor } from './motor';
  * @group Clients
  */
 export class MotorClient implements Motor {
-  private client: MotorServiceClient;
+  private client: PromiseClient<typeof MotorService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -22,12 +25,7 @@ export class MotorClient implements Motor {
     this.options = options;
   }
 
-  private get motorService() {
-    return this.client;
-  }
-
   async setPower(power: number, extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.SetPowerRequest();
     request.setName(this.name);
     request.setPowerPct(power);
@@ -42,7 +40,6 @@ export class MotorClient implements Motor {
   }
 
   async goFor(rpm: number, revolutions: number, extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.GoForRequest();
     request.setName(this.name);
     request.setRpm(rpm);
@@ -58,7 +55,6 @@ export class MotorClient implements Motor {
   }
 
   async goTo(rpm: number, positionRevolutions: number, extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.GoToRequest();
     request.setName(this.name);
     request.setRpm(rpm);
@@ -74,7 +70,6 @@ export class MotorClient implements Motor {
   }
 
   async setRPM(rpm: number, extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.SetRPMRequest();
     request.setName(this.name);
     request.setRpm(rpm);
@@ -89,7 +84,6 @@ export class MotorClient implements Motor {
   }
 
   async resetZeroPosition(offset: number, extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.ResetZeroPositionRequest();
     request.setName(this.name);
     request.setOffset(offset);
@@ -104,7 +98,6 @@ export class MotorClient implements Motor {
   }
 
   async stop(extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.StopRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -118,7 +111,6 @@ export class MotorClient implements Motor {
   }
 
   async getProperties(extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.GetPropertiesRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -133,7 +125,6 @@ export class MotorClient implements Motor {
   }
 
   async getPosition(extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.GetPositionRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -148,7 +139,6 @@ export class MotorClient implements Motor {
   }
 
   async isPowered(extra = {}) {
-    const { motorService } = this;
     const request = new motorApi.IsPoweredRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -163,7 +153,6 @@ export class MotorClient implements Motor {
   }
 
   async isMoving() {
-    const { motorService } = this;
     const request = new motorApi.IsMovingRequest();
     request.setName(this.name);
 
@@ -176,8 +165,7 @@ export class MotorClient implements Motor {
     return response.getIsMoving();
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { motorService } = this;
-    return doCommandFromClient(motorService, this.name, command, this.options);
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

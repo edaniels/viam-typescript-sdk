@@ -1,19 +1,22 @@
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
-import type { RobotClient } from '../../robot';
-import type { Options, StructType } from '../../types';
 import { InputControllerServiceClient } from '../../gen/component/inputcontroller/v1/input_controller_pb_service';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
 
-import { promisify, doCommandFromClient } from '../../utils';
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
+import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
+import type { InputControllerService } from '../../gen/component/inputcontroller/v1/input_controller_connect';
 import {
+  Event,
   GetEventsRequest,
   GetEventsResponse,
   TriggerEventRequest,
   TriggerEventResponse,
-  Event,
 } from '../../gen/component/inputcontroller/v1/input_controller_pb';
+import { doCommandFromClient, promisify } from '../../utils';
 import type { InputController, InputControllerEvent } from './input-controller';
-import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 
 /**
  * A gRPC-web client for the Input Controller component.
@@ -21,7 +24,7 @@ import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
  * @group Clients
  */
 export class InputControllerClient implements InputController {
-  private client: InputControllerServiceClient;
+  private client: PromiseClient<typeof InputControllerService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -31,12 +34,7 @@ export class InputControllerClient implements InputController {
     this.options = options;
   }
 
-  private get inputControllerService() {
-    return this.client;
-  }
-
   async getEvents(extra = {}) {
-    const { inputControllerService } = this;
     const request = new GetEventsRequest();
     request.setController(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -55,7 +53,6 @@ export class InputControllerClient implements InputController {
     { event, time, control, value }: InputControllerEvent,
     extra = {}
   ): Promise<void> {
-    const { inputControllerService } = this;
     const request = new TriggerEventRequest();
     request.setController(this.name);
 
@@ -81,13 +78,7 @@ export class InputControllerClient implements InputController {
     );
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { inputControllerService } = this;
-    return doCommandFromClient(
-      inputControllerService,
-      this.name,
-      command,
-      this.options
-    );
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

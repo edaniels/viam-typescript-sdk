@@ -1,9 +1,12 @@
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-import type { RobotClient } from '../../robot';
+import type { GripperService } from '../../gen/component/gripper/v1/gripper_connect';
 import pb from '../../gen/component/gripper/v1/gripper_pb';
 import { GripperServiceClient } from '../../gen/component/gripper/v1/gripper_pb_service';
-import type { Options, StructType } from '../../types';
-import { promisify, doCommandFromClient } from '../../utils';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
+import { doCommandFromClient, promisify } from '../../utils';
 import type { Gripper } from './gripper';
 
 /**
@@ -12,7 +15,7 @@ import type { Gripper } from './gripper';
  * @group Clients
  */
 export class GripperClient implements Gripper {
-  private client: GripperServiceClient;
+  private client: PromiseClient<typeof GripperService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -22,13 +25,7 @@ export class GripperClient implements Gripper {
     this.options = options;
   }
 
-  private get gripperService() {
-    return this.client;
-  }
-
   async open(extra = {}) {
-    const service = this.gripperService;
-
     const request = new pb.OpenRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -42,8 +39,6 @@ export class GripperClient implements Gripper {
   }
 
   async grab(extra = {}) {
-    const service = this.gripperService;
-
     const request = new pb.GrabRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -57,8 +52,6 @@ export class GripperClient implements Gripper {
   }
 
   async stop(extra = {}) {
-    const service = this.gripperService;
-
     const request = new pb.StopRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -72,8 +65,6 @@ export class GripperClient implements Gripper {
   }
 
   async isMoving() {
-    const service = this.gripperService;
-
     const request = new pb.IsMovingRequest();
     request.setName(this.name);
 
@@ -87,8 +78,7 @@ export class GripperClient implements Gripper {
     return response.getIsMoving();
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const service = this.gripperService;
-    return doCommandFromClient(service, this.name, command, this.options);
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

@@ -1,8 +1,11 @@
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-import type { RobotClient } from '../../robot';
+import type { GantryService } from '../../gen/component/gantry/v1/gantry_connect';
 import pb from '../../gen/component/gantry/v1/gantry_pb';
 import { GantryServiceClient } from '../../gen/component/gantry/v1/gantry_pb_service';
-import type { Options, StructType } from '../../types';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
 import { doCommandFromClient, promisify } from '../../utils';
 import type { Gantry } from './gantry';
 
@@ -12,7 +15,7 @@ import type { Gantry } from './gantry';
  * @group Clients
  */
 export class GantryClient implements Gantry {
-  private client: GantryServiceClient;
+  private client: PromiseClient<typeof GantryService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -22,12 +25,7 @@ export class GantryClient implements Gantry {
     this.options = options;
   }
 
-  private get GantryService() {
-    return this.client;
-  }
-
   async getPosition(extra = {}) {
-    const gantryService = this.GantryService;
     const request = new pb.GetPositionRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -47,7 +45,6 @@ export class GantryClient implements Gantry {
     speedsMmPerSec: number[],
     extra = {}
   ) {
-    const gantryService = this.GantryService;
 
     const request = new pb.MoveToPositionRequest();
     request.setName(this.name);
@@ -64,7 +61,6 @@ export class GantryClient implements Gantry {
   }
 
   async home(extra = {}) {
-    const gantryService = this.GantryService;
     const request = new pb.HomeRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -80,7 +76,6 @@ export class GantryClient implements Gantry {
   }
 
   async getLengths(extra = {}) {
-    const gantryService = this.GantryService;
     const request = new pb.GetLengthsRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -96,7 +91,6 @@ export class GantryClient implements Gantry {
   }
 
   async stop(extra = {}) {
-    const gantryService = this.GantryService;
     const request = new pb.StopRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -110,7 +104,6 @@ export class GantryClient implements Gantry {
   }
 
   async isMoving() {
-    const gantryService = this.GantryService;
     const request = new pb.IsMovingRequest();
     request.setName(this.name);
 
@@ -123,8 +116,7 @@ export class GantryClient implements Gantry {
     return response.getIsMoving();
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const gantryService = this.GantryService;
-    return doCommandFromClient(gantryService, this.name, command, this.options);
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

@@ -1,7 +1,7 @@
 import type { Resource, StructType, Vector3 } from '../../types';
 import pb from '../../gen/component/base/v1/base_pb';
 
-export type BaseProperties = pb.GetPropertiesResponse.AsObject;
+export type BaseProperties = pb.GetPropertiesResponse;
 
 /** Represents a physical base of a robot. */
 export interface Base extends Resource {
@@ -15,7 +15,7 @@ export interface Base extends Resource {
   moveStraight(
     distanceMm: number,
     mmPerSec: number,
-    extra?: StructType
+    extra?: Struct
   ): Promise<void>;
 
   /**
@@ -25,7 +25,7 @@ export interface Base extends Resource {
    * @param angleDeg - Degrees to spin.
    * @param degsPerSec - Angular speed, in degrees per second.
    */
-  spin(angleDeg: number, degsPerSec: number, extra?: StructType): Promise<void>;
+  spin(angleDeg: number, degsPerSec: number, extra?: Struct): Promise<void>;
 
   /**
    * Set the linear and angular power of a base from -1 to 1 in terms of power
@@ -37,7 +37,7 @@ export interface Base extends Resource {
   setPower(
     linear: Vector3,
     angular: Vector3,
-    extra?: StructType
+    extra?: Struct
   ): Promise<void>;
 
   /**
@@ -49,15 +49,15 @@ export interface Base extends Resource {
   setVelocity(
     linear: Vector3,
     angular: Vector3,
-    extra?: StructType
+    extra?: Struct
   ): Promise<void>;
 
   /** Stop a base */
-  stop(extra?: StructType): Promise<void>;
+  stop(extra?: Struct): Promise<void>;
 
   /** Return true if the base is in motion. */
-  isMoving(extra?: StructType): Promise<boolean>;
+  isMoving(extra?: Struct): Promise<boolean>;
 
   /** Return the base's properties. */
-  getProperties(extra?: StructType): Promise<BaseProperties>;
+  getProperties(extra?: Struct): Promise<BaseProperties>;
 }

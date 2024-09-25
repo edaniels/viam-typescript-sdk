@@ -6,7 +6,7 @@ import { VideoStream } from './video-stream';
 
 export interface MachinePartControlProps {
   credentials: Credential | AccessToken;
-  machinePart: appApi.RobotPart.AsObject;
+  machinePart: appApi.RobotPart;
 }
 
 export const MachinePartControl = ({ credentials, machinePart }: MachinePartControlProps): JSX.Element => {

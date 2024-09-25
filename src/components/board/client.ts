@@ -1,12 +1,11 @@
-import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-
-import { Duration as PBDuration } from 'google-protobuf/google/protobuf/duration_pb';
-import { BoardServiceClient } from '../../gen/component/board/v1/board_pb_service';
 import type { RobotClient } from '../../robot';
-import type { Options, StructType } from '../../types';
+import type { Options } from '../../types';
 
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
+import type { BoardService } from '../../gen/component/board/v1/board_connect';
 import pb from '../../gen/component/board/v1/board_pb';
-import { promisify, doCommandFromClient } from '../../utils';
+import { doCommandFromClient } from '../../utils';
 import type { Board, Duration, PowerMode, Tick } from './board';
 
 /**
@@ -15,7 +14,7 @@ import type { Board, Duration, PowerMode, Tick } from './board';
  * @group Clients
  */
 export class BoardClient implements Board {
-  private client: BoardServiceClient;
+  private client: PromiseClient<typeof BoardService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -25,17 +24,13 @@ export class BoardClient implements Board {
     this.options = options;
   }
 
-  private get boardService() {
-    return this.client;
-  }
-
   async setGPIO(pin: string, high: boolean, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.SetGPIORequest();
-    request.setName(this.name);
-    request.setPin(pin);
-    request.setHigh(high);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new pb.SetGPIORequest({
+      name: this.name,
+      pin,
+      high,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -46,11 +41,11 @@ export class BoardClient implements Board {
   }
 
   async getGPIO(pin: string, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.GetGPIORequest();
-    request.setName(this.name);
-    request.setPin(pin);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new pb.GetGPIORequest({
+      name: this.name,
+      pin,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -62,8 +57,11 @@ export class BoardClient implements Board {
   }
 
   async getPWM(pin: string, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.PWMRequest();
+    const request = new pb.PWMRequest({
+      name: this.name,
+      pin,
+      extra: new Struct(extra),
+    });
     request.setName(this.name);
     request.setPin(pin);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -78,12 +76,12 @@ export class BoardClient implements Board {
   }
 
   async setPWM(pin: string, dutyCyle: number, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.SetPWMRequest();
-    request.setName(this.name);
-    request.setPin(pin);
-    request.setDutyCyclePct(dutyCyle);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new pb.SetPWMRequest({
+      name: this.name,
+      pin,
+      dutyCyclePct: dutyCyle,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -94,11 +92,11 @@ export class BoardClient implements Board {
   }
 
   async getPWMFrequency(pin: string, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.PWMFrequencyRequest();
-    request.setName(this.name);
-    request.setPin(pin);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new pb.PWMFrequencyRequest({
+      name: this.name,
+      pin,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -109,13 +107,13 @@ export class BoardClient implements Board {
     return response.getFrequencyHz();
   }
 
-  async setPWMFrequency(pin: string, frequencyHz: number, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.SetPWMFrequencyRequest();
-    request.setName(this.name);
-    request.setPin(pin);
-    request.setFrequencyHz(frequencyHz);
-    request.setExtra(Struct.fromJavaScript(extra));
+  async setPWMFrequency(pin: string, frequencyHz: bigint, extra = {}) {
+    const request = new pb.SetPWMFrequencyRequest({
+      name: this.name,
+      pin,
+      frequencyHz,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -126,11 +124,11 @@ export class BoardClient implements Board {
   }
 
   async readAnalogReader(analogReader: string, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.ReadAnalogReaderRequest();
-    request.setBoardName(this.name);
-    request.setAnalogReaderName(analogReader);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new pb.ReadAnalogReaderRequest({
+      boardName: this.name,
+      analogReaderName: analogReader,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -143,12 +141,12 @@ export class BoardClient implements Board {
   }
 
   async writeAnalog(pin: string, value: number, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.WriteAnalogRequest();
-    request.setName(this.name);
-    request.setPin(pin);
-    request.setValue(value);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new pb.WriteAnalogRequest({
+      name: this.name,
+      pin,
+      value,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -158,12 +156,12 @@ export class BoardClient implements Board {
     );
   }
 
-  async getDigitalInterruptValue(digitalInteruptName: string, extra = {}) {
-    const { boardService } = this;
-    const request = new pb.GetDigitalInterruptValueRequest();
-    request.setBoardName(this.name);
-    request.setDigitalInterruptName(digitalInteruptName);
-    request.setExtra(Struct.fromJavaScript(extra));
+  async getDigitalInterruptValue(digitalInterruptName: string, extra = {}) {
+    const request = new pb.GetDigitalInterruptValueRequest({
+      boardName: this.name,
+      digitalInterruptName,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
@@ -224,17 +222,17 @@ export class BoardClient implements Board {
     duration?: Duration,
     extra = {}
   ) {
-    const { boardService } = this;
-    const request = new pb.SetPowerModeRequest();
-    request.setName(name);
-    request.setPowerMode(powerMode);
+    const request = new pb.SetPowerModeRequest({
+      name: this.name,
+      powerMode,
+      extra: new Struct(extra),
+    });
     if (duration) {
       const pbDuration = new PBDuration();
       pbDuration.setNanos(duration.nanos);
       pbDuration.setSeconds(duration.seconds);
-      request.setDuration(pbDuration);
+      request.duration = pbDuration;
     }
-    request.setExtra(Struct.fromJavaScript(extra));
 
     this.options.requestLogger?.(request);
 
@@ -244,8 +242,7 @@ export class BoardClient implements Board {
     );
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { boardService } = this;
-    return doCommandFromClient(boardService, this.name, command, this.options);
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

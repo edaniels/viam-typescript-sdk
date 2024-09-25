@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 export interface MachinesPartsListProps {
   appClient: AppClient;
-  machine: appApi.Robot.AsObject;
+  machine: appApi.Robot;
   onMachinePartSelected: (machine: appApi.RobotPart.AsObject) => unknown;
 }
 

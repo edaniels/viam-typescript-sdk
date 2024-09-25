@@ -148,31 +148,31 @@ interface BrowserStateOrganizations {
 interface BrowserStateLocations {
   key: BrowserStateKey.Locations;
   appClient: AppClient;
-  organization: appApi.Organization.AsObject;
+  organization: appApi.Organization;
 }
 
 interface BrowserStateMachines {
   key: BrowserStateKey.Machines;
   appClient: AppClient;
-  organization: appApi.Organization.AsObject;
-  location: appApi.Location.AsObject;
+  organization: appApi.Organization;
+  location: appApi.Location;
 }
 
 interface BrowserStateMachineParts {
   key: BrowserStateKey.MachineParts;
   appClient: AppClient;
-  location: appApi.Location.AsObject;
-  organization: appApi.Organization.AsObject;
-  machine: appApi.Robot.AsObject;
+  location: appApi.Location;
+  organization: appApi.Organization;
+  machine: appApi.Robot;
 }
 
 interface BrowserStateControlMachinePart {
   key: BrowserStateKey.ControlMachinePart;
   appClient: AppClient;
-  organization: appApi.Organization.AsObject;
-  location: appApi.Location.AsObject;
-  machine: appApi.Robot.AsObject;
-  machinePart: appApi.RobotPart.AsObject;
+  organization: appApi.Organization;
+  location: appApi.Location;
+  machine: appApi.Robot;
+  machinePart: appApi.RobotPart;
 }
 
 export type BrowserState =

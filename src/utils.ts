@@ -2,7 +2,7 @@ import { Struct, type JsonValue, type PartialMessage } from '@bufbuild/protobuf'
 import type { CallOptions } from '@connectrpc/connect';
 import { apiVersion } from './api-version';
 import common, { DoCommandRequest, DoCommandResponse } from './gen/common/v1/common_pb';
-import type { Options, Vector3 } from './types';
+import type { Options } from './types';
 
 export const clientHeaders = new Headers({
   'viam-client': `typescript;v${__VERSION__};${apiVersion}`,
@@ -30,13 +30,4 @@ export const doCommandFromClient = async function doCommandFromClient(
     return {};
   }
   return result;
-};
-
-/** Convert a 3D Vector POJO to a Protobuf Datatype */
-export const encodeVector3 = (value: Vector3): common.Vector3 => {
-  return new common.Vector3({
-    x: value.x,
-    y: value.y,
-    z: value.z,
-  });
 };

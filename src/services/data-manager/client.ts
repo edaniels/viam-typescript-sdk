@@ -1,48 +1,35 @@
-import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-
-import type { RobotClient } from '../../robot';
+import { Struct, type JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
+import { DataManagerService } from '../../gen/service/datamanager/v1/data_manager_connect.js';
 import pb from '../../gen/service/datamanager/v1/data_manager_pb.js';
-import { DataManagerServiceClient } from '../../gen/service/datamanager/v1/data_manager_pb_service.js';
-import type { Options, StructType } from '../../types';
-import { promisify, doCommandFromClient } from '../../utils';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
+import { doCommandFromClient } from '../../utils';
 import type { DataManager } from './data-manager';
 
 export class DataManagerClient implements DataManager {
-  private client: DataManagerServiceClient;
+  private client: PromiseClient<typeof DataManagerService>;
   private readonly name: string;
   private readonly options: Options;
 
   constructor(client: RobotClient, name: string, options: Options = {}) {
-    this.client = client.createServiceClient(DataManagerServiceClient);
+    this.client = client.createServiceClient(DataManagerService);
     this.name = name;
     this.options = options;
   }
 
-  private get datamanagerService() {
-    return this.client;
-  }
-
   async sync(extra = {}) {
-    const { datamanagerService } = this;
-    const request = new pb.SyncRequest();
-    request.setName(this.name);
-    request.setExtra(Struct.fromJavaScript(extra));
+    const request = new pb.SyncRequest({
+      name: this.name,
+      extra: new Struct(extra),
+    });
 
     this.options.requestLogger?.(request);
 
-    await promisify<pb.SyncRequest, pb.SyncResponse>(
-      datamanagerService.sync.bind(datamanagerService),
-      request
-    );
+    await this.client.sync(request);
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { datamanagerService } = this;
-    return doCommandFromClient(
-      datamanagerService,
-      this.name,
-      command,
-      this.options
-    );
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

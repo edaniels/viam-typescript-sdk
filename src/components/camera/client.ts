@@ -1,9 +1,12 @@
-import { CameraServiceClient } from '../../gen/component/camera/v1/camera_pb_service';
-import type { RobotClient } from '../../robot';
-import type { HttpBody } from '../../gen/google/api/httpbody_pb';
-import type { Options, StructType } from '../../types';
+import type { JsonValue, Struct } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
+import type { CameraService } from '../../gen/component/camera/v1/camera_connect';
 import pb from '../../gen/component/camera/v1/camera_pb';
-import { promisify, doCommandFromClient } from '../../utils';
+import { CameraServiceClient } from '../../gen/component/camera/v1/camera_pb_service';
+import type { HttpBody } from '../../gen/google/api/httpbody_pb';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
+import { doCommandFromClient, promisify } from '../../utils';
 import type { Camera, MimeType } from './camera';
 
 const PointCloudPCD: MimeType = 'pointcloud/pcd';
@@ -14,7 +17,7 @@ const PointCloudPCD: MimeType = 'pointcloud/pcd';
  * @group Clients
  */
 export class CameraClient implements Camera {
-  private client: CameraServiceClient;
+  private client: PromiseClient<typeof CameraService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -24,12 +27,7 @@ export class CameraClient implements Camera {
     this.options = options;
   }
 
-  private get cameraService() {
-    return this.client;
-  }
-
   async getImage(mimeType: MimeType = '') {
-    const { cameraService } = this;
     const request = new pb.GetImageRequest();
     request.setName(this.name);
     request.setMimeType(mimeType);
@@ -45,7 +43,6 @@ export class CameraClient implements Camera {
   }
 
   async renderFrame(mimeType: MimeType = '') {
-    const { cameraService } = this;
     const request = new pb.RenderFrameRequest();
     request.setName(this.name);
     request.setMimeType(mimeType);
@@ -61,7 +58,6 @@ export class CameraClient implements Camera {
   }
 
   async getPointCloud() {
-    const { cameraService } = this;
     const request = new pb.GetPointCloudRequest();
     request.setName(this.name);
     request.setMimeType(PointCloudPCD);
@@ -77,7 +73,6 @@ export class CameraClient implements Camera {
   }
 
   async getProperties() {
-    const { cameraService } = this;
     const request = new pb.GetPropertiesRequest();
     request.setName(this.name);
 
@@ -91,8 +86,7 @@ export class CameraClient implements Camera {
     return response.toObject();
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { cameraService } = this;
-    return doCommandFromClient(cameraService, this.name, command, this.options);
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

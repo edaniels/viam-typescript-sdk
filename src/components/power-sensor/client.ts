@@ -1,13 +1,16 @@
+import type { JsonValue } from '@bufbuild/protobuf';
+import type { PromiseClient } from '@connectrpc/connect';
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-import type { RobotClient } from '../../robot';
-import { PowerSensorServiceClient } from '../../gen/component/powersensor/v1/powersensor_pb_service';
-import type { Options, StructType } from '../../types';
-import pb from '../../gen/component/powersensor/v1/powersensor_pb';
-import { promisify, doCommandFromClient } from '../../utils';
 import {
   GetReadingsRequest,
   GetReadingsResponse,
 } from '../../gen/common/v1/common_pb';
+import type { PowerSensorService } from '../../gen/component/powersensor/v1/powersensor_connect';
+import pb from '../../gen/component/powersensor/v1/powersensor_pb';
+import { PowerSensorServiceClient } from '../../gen/component/powersensor/v1/powersensor_pb_service';
+import type { RobotClient } from '../../robot';
+import type { Options } from '../../types';
+import { doCommandFromClient, promisify } from '../../utils';
 import type { PowerSensor } from './power-sensor';
 
 /**
@@ -17,7 +20,7 @@ import type { PowerSensor } from './power-sensor';
  */
 
 export class PowerSensorClient implements PowerSensor {
-  private client: PowerSensorServiceClient;
+  private client: PromiseClient<typeof PowerSensorService>;
   private readonly name: string;
   private readonly options: Options;
 
@@ -27,12 +30,7 @@ export class PowerSensorClient implements PowerSensor {
     this.options = options;
   }
 
-  private get powersensorService() {
-    return this.client;
-  }
-
   async getVoltage(extra = {}) {
-    const { powersensorService } = this;
     const request = new pb.GetVoltageRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -48,7 +46,6 @@ export class PowerSensorClient implements PowerSensor {
   }
 
   async getCurrent(extra = {}) {
-    const { powersensorService } = this;
     const request = new pb.GetCurrentRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -64,7 +61,6 @@ export class PowerSensorClient implements PowerSensor {
   }
 
   async getPower(extra = {}) {
-    const { powersensorService } = this;
     const request = new pb.GetPowerRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -80,7 +76,6 @@ export class PowerSensorClient implements PowerSensor {
   }
 
   async getReadings(extra = {}) {
-    const { powersensorService } = this;
     const request = new GetReadingsRequest();
     request.setName(this.name);
     request.setExtra(Struct.fromJavaScript(extra));
@@ -99,13 +94,7 @@ export class PowerSensorClient implements PowerSensor {
     return result;
   }
 
-  async doCommand(command: StructType): Promise<StructType> {
-    const { powersensorService } = this;
-    return doCommandFromClient(
-      powersensorService,
-      this.name,
-      command,
-      this.options
-    );
+  async doCommand(command: Struct): Promise<JsonValue> {
+    return doCommandFromClient(this.client.doCommand, this.name, command, this.options);
   }
 }

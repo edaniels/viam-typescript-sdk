@@ -23,10 +23,6 @@ export class ArmClient implements Arm {
     this.options = options;
   }
 
-  private get ArmService() {
-    return this.client;
-  }
-
   async getEndPosition(extra = {}) {
     const request = new pb.GetEndPositionRequest({
       name: this.name,

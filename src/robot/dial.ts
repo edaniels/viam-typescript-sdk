@@ -1,13 +1,13 @@
 import { backOff, type IBackOffOptions } from 'exponential-backoff';
+import { isCredential } from '../app/viam-transport';
 import { DIAL_TIMEOUT } from '../constants';
 import type { AccessToken, Credential } from '../main';
 import { RobotClient } from './client';
 
 /** Options required to dial a robot via gRPC. */
 export interface DialDirectConf {
-  authEntity?: string;
   host: string;
-  credential?: Credential | AccessToken;
+  credentials?: Credential | AccessToken;
   disableSessions?: boolean;
   noReconnect?: boolean;
   reconnectMaxAttempts?: number;
@@ -78,9 +78,8 @@ interface ICEServer {
  *   infinity.
  */
 export interface DialWebRTCConf {
-  authEntity?: string;
   host: string;
-  credential?: Credential | AccessToken;
+  credentials?: Credential | AccessToken;
   disableSessions?: boolean;
   noReconnect?: boolean;
   reconnectMaxAttempts?: number;
@@ -209,9 +208,9 @@ export const createRobotClient = async (
  * configs.
  */
 const validateDialConf = (conf: DialConf) => {
-  if (conf.authEntity) {
+  if (conf.credentials && isCredential(conf.credentials)) {
     try {
-      conf.authEntity = new URL(conf.authEntity).host;
+      conf.credentials.authEntity = new URL(conf.credentials.authEntity).host;
     } catch (error) {
       if (!(error instanceof TypeError)) {
         throw error;

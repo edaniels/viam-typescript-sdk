@@ -1,7 +1,5 @@
-import type { JavaScriptValue } from 'google-protobuf/google/protobuf/struct_pb';
-
+import type { JsonValue, Struct } from '@bufbuild/protobuf';
 import common from './gen/common/v1/common_pb';
-export type StructType = Record<string, JavaScriptValue>;
 
 export interface Options {
   requestLogger?: (req: unknown) => void;
@@ -13,14 +11,14 @@ export interface Resource {
    *
    * @param command - The command to execute.
    */
-  doCommand: (command: StructType) => Promise<StructType>;
+  doCommand(command: Struct): Promise<JsonValue>;
 }
 
 // Common Protobuf Types
 
-export type ResourceName = common.ResourceName.AsObject;
-export type GeoGeometry = common.GeoGeometry.AsObject;
-export type GeoPoint = common.GeoPoint.AsObject;
+export type ResourceName = common.ResourceName;
+export type GeoGeometry = common.GeoGeometry;
+export type GeoPoint = common.GeoPoint;
 
 export const isValidGeoPoint = (value: GeoPoint) => {
   const { latitude, longitude } = value;
@@ -34,16 +32,16 @@ export const isValidGeoPoint = (value: GeoPoint) => {
 };
 
 // Spatial Math
-export type Vector3 = common.Vector3.AsObject;
-export type Orientation = common.Orientation.AsObject;
+export type Vector3 = common.Vector3;
+export type Orientation = common.Orientation;
 
 // Motion
-export type Pose = common.Pose.AsObject;
-export type PoseInFrame = common.PoseInFrame.AsObject;
-export type Transform = common.Transform.AsObject;
-export type WorldState = common.WorldState.AsObject;
-export type GeometriesInFrame = common.GeometriesInFrame.AsObject;
-export type Geometry = common.Geometry.AsObject;
-export type Sphere = common.Sphere.AsObject;
-export type RectangularPrism = common.RectangularPrism.AsObject;
-export type Capsule = common.Capsule.AsObject;
+export type Pose = common.Pose;
+export type PoseInFrame = common.PoseInFrame;
+export type Transform = common.Transform;
+export type WorldState = common.WorldState;
+export type GeometriesInFrame = common.GeometriesInFrame;
+export type Geometry = common.Geometry;
+export type Sphere = common.Sphere;
+export type RectangularPrism = common.RectangularPrism;
+export type Capsule = common.Capsule;

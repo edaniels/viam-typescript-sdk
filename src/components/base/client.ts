@@ -1,10 +1,10 @@
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
-import type { RobotClient } from '../../robot';
+import { BaseService } from '../../gen/component/base/v1/base_connect';
 import pb from '../../gen/component/base/v1/base_pb';
-import { BaseServiceClient } from '../../gen/component/base/v1/base_pb_service';
+import type { RobotClient } from '../../robot';
 import type { Options, StructType, Vector3 } from '../../types';
-import { promisify, doCommandFromClient, encodeVector3 } from '../../utils';
+import { doCommandFromClient, encodeVector3, promisify } from '../../utils';
 import type { Base } from './base';
 
 /**
@@ -13,12 +13,12 @@ import type { Base } from './base';
  * @group Clients
  */
 export class BaseClient implements Base {
-  private client: BaseServiceClient;
+  private client: Promise<typeof BaseService>;
   private readonly name: string;
   private readonly options: Options;
 
   constructor(client: RobotClient, name: string, options: Options = {}) {
-    this.client = client.createServiceClient(BaseServiceClient);
+    this.client = client.createServiceClient(BaseService);
     this.name = name;
     this.options = options;
   }

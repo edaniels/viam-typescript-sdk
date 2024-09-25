@@ -1,20 +1,19 @@
+import type { Struct } from '@bufbuild/protobuf';
 import type { JointPositions } from '../../gen/component/arm/v1/arm_pb';
 
-import type { Pose, Resource, StructType } from '../../types';
-
-export type ArmJointPositions = JointPositions.AsObject;
+import type { Pose, Resource } from '../../types';
 
 /** Represents a physical robot arm that exists in three-dimensional space. */
 export interface Arm extends Resource {
   /** Get the position of the end of the arm expressed as a pose */
-  getEndPosition: (extra?: StructType) => Promise<Pose>;
+  getEndPosition: (extra?: Struct) => Promise<Pose>;
 
   /**
    * Move the end of the arm to the pose.
    *
    * @param pose - The destination pose for the arm.
    */
-  moveToPosition: (pose: Pose, extra?: StructType) => Promise<void>;
+  moveToPosition: (pose: Pose, extra?: Struct) => Promise<void>;
 
   /**
    * Move each joint of the arm based on the angles on the joint poisitons.
@@ -24,14 +23,14 @@ export interface Arm extends Resource {
    */
   moveToJointPositions: (
     jointPositionsList: number[],
-    extra?: StructType
+    extra?: Struct
   ) => Promise<void>;
 
   /** Gets the current position of each joint. */
-  getJointPositions: (extra?: StructType) => Promise<ArmJointPositions>;
+  getJointPositions: (extra?: Struct) => Promise<JointPositions>;
 
   /** Stops the motion of the arm. */
-  stop: (extra?: StructType) => Promise<void>;
+  stop: (extra?: Struct) => Promise<void>;
 
   /** Get if the arm is currently moving. */
   isMoving: () => Promise<boolean>;

@@ -1,15 +1,17 @@
-import * as pb from '../gen/app/v1/app_pb';
-import { type LogEntry } from '../gen/common/v1/common_pb';
+import { createPromiseClient, type PromiseClient, type Transport } from '@connectrpc/connect';
 import { type RpcOptions } from '@improbable-eng/grpc-web/dist/typings/client.d';
-import { AppServiceClient } from '../gen/app/v1/app_pb_service';
-import { promisify } from '../utils';
-import type { StructType } from '../types';
 import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 import {
   PackageType,
   type PackageTypeMap,
 } from '../gen/app/packages/v1/packages_pb';
+import { AppService } from '../gen/app/v1/app_connect';
 import type { FragmentVisibilityMap } from '../gen/app/v1/app_pb';
+import * as pb from '../gen/app/v1/app_pb';
+import { AppServiceClient } from '../gen/app/v1/app_pb_service';
+import { type LogEntry } from '../gen/common/v1/common_pb';
+import type { StructType } from '../types';
+import { promisify } from '../utils';
 
 /**
  * Creates an Authorization object from auth details.
@@ -84,10 +86,10 @@ export const createPermission = (
 };
 
 export class AppClient {
-  private service: AppServiceClient;
+  private client: PromiseClient<typeof AppService>;
 
-  constructor(serviceHost: string, grpcOptions: RpcOptions) {
-    this.service = new AppServiceClient(serviceHost, grpcOptions);
+  constructor(transport: Transport) {
+    this.client = createPromiseClient(AppService, transport);
   }
 
   /**
@@ -457,16 +459,11 @@ export class AppClient {
    * @param locId The ID of the location to query.
    * @returns The location object
    */
-  async getLocation(locId: string): Promise<pb.Location.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.GetLocationRequest();
-    req.setLocationId(locId);
-
-    const response = await promisify<
-      pb.GetLocationRequest,
-      pb.GetLocationResponse
-    >(service.getLocation.bind(service), req);
-    return response.getLocation()?.toObject();
+  async getLocation(locId: string): Promise<pb.Location | undefined> {
+    const resp = await this.client.getLocation({
+      locationId: locId,
+    });
+    return resp.location;
   }
 
   /**

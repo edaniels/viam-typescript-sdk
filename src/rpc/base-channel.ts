@@ -1,4 +1,4 @@
-import type { ProtobufMessage } from '@improbable-eng/grpc-web/dist/typings/message';
+import type { Message } from '@bufbuild/protobuf';
 import { ConnectionClosedError } from './connection-closed-error';
 
 export class BaseChannel {
@@ -70,12 +70,12 @@ export class BaseChannel {
     this.closeWithReason(new ConnectionClosedError('data channel closed'));
   }
 
-  private onChannelError(ev: any) {
+  private onChannelError(ev: Event) {
     console.error('channel error', ev);
-    this.closeWithReason(new Error(ev));
+    this.closeWithReason(new Error(ev.toString()));
   }
 
-  protected write(msg: ProtobufMessage) {
-    this.dataChannel.send(msg.serializeBinary());
+  protected write(msg: Message) {
+    this.dataChannel.send(msg.toBinary());
   }
 }

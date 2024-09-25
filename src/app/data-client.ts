@@ -249,26 +249,10 @@ export class DataClient {
    * @param ids The IDs of the data to be tagged. Must be non-empty.
    */
   async addTagsToBinaryDataByIds(tags: string[], ids: BinaryID[]) {
-    const { dataService: service } = this;
-
-    const binaryIds: dataPb.BinaryID[] = ids.map(
-      ({ fileId, organizationId, locationId }) => {
-        const binaryId = new dataPb.BinaryID();
-        binaryId.setFileId(fileId);
-        binaryId.setOrganizationId(organizationId);
-        binaryId.setLocationId(locationId);
-        return binaryId;
-      }
-    );
-
-    const req = new dataPb.AddTagsToBinaryDataByIDsRequest();
-    req.setBinaryIdsList(binaryIds);
-    req.setTagsList(tags);
-
-    await promisify<
-      dataPb.AddTagsToBinaryDataByIDsRequest,
-      dataPb.AddTagsToBinaryDataByIDsResponse
-    >(service.addTagsToBinaryDataByIDs.bind(service), req);
+    await this.dataClient.addTagsToBinaryDataByIDs({
+      tags,
+      binaryIds: ids,
+    });
   }
 
   /**
@@ -279,16 +263,10 @@ export class DataClient {
    *   No `filter` implies all binary data.
    */
   async addTagsToBinaryDataByFilter(tags: string[], filter?: dataPb.Filter) {
-    const { dataService: service } = this;
-
-    const req = new dataPb.AddTagsToBinaryDataByFilterRequest();
-    req.setTagsList(tags);
-    req.setFilter(filter ?? new dataPb.Filter());
-
-    await promisify<
-      dataPb.AddTagsToBinaryDataByFilterRequest,
-      dataPb.AddTagsToBinaryDataByFilterResponse
-    >(service.addTagsToBinaryDataByFilter.bind(service), req);
+    await this.dataClient.addTagsToBinaryDataByFilter({
+      tags,
+      filter,
+    });
   }
 
   /**
@@ -300,27 +278,10 @@ export class DataClient {
    * @returns The number of items deleted
    */
   async removeTagsFromBinaryDataByIds(tags: string[], ids: BinaryID[]) {
-    const { dataService: service } = this;
-
-    const binaryIds: dataPb.BinaryID[] = ids.map(
-      ({ fileId, organizationId, locationId }) => {
-        const binaryId = new dataPb.BinaryID();
-        binaryId.setFileId(fileId);
-        binaryId.setOrganizationId(organizationId);
-        binaryId.setLocationId(locationId);
-        return binaryId;
-      }
-    );
-
-    const req = new dataPb.RemoveTagsFromBinaryDataByIDsRequest();
-    req.setBinaryIdsList(binaryIds);
-    req.setTagsList(tags);
-
-    const response = await promisify<
-      dataPb.RemoveTagsFromBinaryDataByIDsRequest,
-      dataPb.RemoveTagsFromBinaryDataByIDsResponse
-    >(service.removeTagsFromBinaryDataByIDs.bind(service), req);
-    return response.getDeletedCount();
+    return (await this.dataClient.removeTagsFromBinaryDataByIDs({
+      tags,
+      binaryIds: ids,
+    })).deletedCount;
   }
 
   /**
@@ -336,17 +297,10 @@ export class DataClient {
     tags: string[],
     filter?: dataPb.Filter
   ) {
-    const { dataService: service } = this;
-
-    const req = new dataPb.RemoveTagsFromBinaryDataByFilterRequest();
-    req.setTagsList(tags);
-    req.setFilter(filter ?? new dataPb.Filter());
-
-    const response = await promisify<
-      dataPb.RemoveTagsFromBinaryDataByFilterRequest,
-      dataPb.RemoveTagsFromBinaryDataByFilterResponse
-    >(service.removeTagsFromBinaryDataByFilter.bind(service), req);
-    return response.getDeletedCount();
+    return (await this.dataClient.removeTagsFromBinaryDataByFilter({
+      tags,
+      filter,
+    })).deletedCount;
   }
 
   /**
@@ -357,16 +311,7 @@ export class DataClient {
    * @returns The list of tags
    */
   async tagsByFilter(filter?: dataPb.Filter) {
-    const { dataService: service } = this;
-
-    const req = new dataPb.TagsByFilterRequest();
-    req.setFilter(filter);
-
-    const response = await promisify<
-      dataPb.TagsByFilterRequest,
-      dataPb.TagsByFilterResponse
-    >(service.tagsByFilter.bind(service), req);
-    return response.getTagsList();
+    return (await this.dataClient.tagsByFilter({ filter }));
   }
 
   /**
@@ -392,26 +337,14 @@ export class DataClient {
     xMaxNormalized: number,
     yMaxNormalized: number
   ) {
-    const { dataService: service } = this;
-
-    const binaryId = new dataPb.BinaryID();
-    binaryId.setFileId(id.fileId);
-    binaryId.setOrganizationId(id.organizationId);
-    binaryId.setLocationId(id.locationId);
-
-    const req = new dataPb.AddBoundingBoxToImageByIDRequest();
-    req.setBinaryId(binaryId);
-    req.setLabel(label);
-    req.setXMinNormalized(xMinNormalized);
-    req.setYMinNormalized(yMinNormalized);
-    req.setXMaxNormalized(xMaxNormalized);
-    req.setYMaxNormalized(yMaxNormalized);
-
-    const response = await promisify<
-      dataPb.AddBoundingBoxToImageByIDRequest,
-      dataPb.AddBoundingBoxToImageByIDResponse
-    >(service.addBoundingBoxToImageByID.bind(service), req);
-    return response.getBboxId();
+    return (await this.dataClient.addBoundingBoxToImageByID({
+      binaryId: id,
+      label,
+      xMinNormalized,
+      yMinNormalized,
+      xMaxNormalized,
+      yMaxNormalized,
+    })).bboxId;
   }
 
   /**
@@ -421,21 +354,10 @@ export class DataClient {
    * @param bboxId The ID of the bounding box to remove
    */
   async removeBoundingBoxFromImageById(binId: BinaryID, bboxId: string) {
-    const { dataService: service } = this;
-
-    const binaryId = new dataPb.BinaryID();
-    binaryId.setFileId(binId.fileId);
-    binaryId.setOrganizationId(binId.organizationId);
-    binaryId.setLocationId(binId.locationId);
-
-    const req = new dataPb.RemoveBoundingBoxFromImageByIDRequest();
-    req.setBinaryId(binaryId);
-    req.setBboxId(bboxId);
-
-    await promisify<
-      dataPb.RemoveBoundingBoxFromImageByIDRequest,
-      dataPb.RemoveBoundingBoxFromImageByIDResponse
-    >(service.removeBoundingBoxFromImageByID.bind(service), req);
+    await this.dataClient.removeBoundingBoxFromImageByID({
+      binaryId: binId,
+      bboxId,
+    });
   }
 
   /**
@@ -446,16 +368,9 @@ export class DataClient {
    * @returns The list of bounding box labels
    */
   async boundingBoxLabelsByFilter(filter?: dataPb.Filter) {
-    const { dataService: service } = this;
-
-    const req = new dataPb.BoundingBoxLabelsByFilterRequest();
-    req.setFilter(filter ?? new dataPb.Filter());
-
-    const response = await promisify<
-      dataPb.BoundingBoxLabelsByFilterRequest,
-      dataPb.BoundingBoxLabelsByFilterResponse
-    >(service.boundingBoxLabelsByFilter.bind(service), req);
-    return response.getLabelsList();
+    return (await this.dataClient.boundingBoxLabelsByFilter({
+      filter,
+    })).labels;
   }
 
   /**
@@ -467,16 +382,7 @@ export class DataClient {
    * @param password The password of the user
    */
   async configureDatabaseUser(organizationId: string, password: string) {
-    const { dataService: service } = this;
-
-    const req = new dataPb.ConfigureDatabaseUserRequest();
-    req.setOrganizationId(orgId);
-    req.setPassword(password);
-
-    await promisify<
-      dataPb.ConfigureDatabaseUserRequest,
-      dataPb.ConfigureDatabaseUserResponse
-    >(service.configureDatabaseUser.bind(service), req);
+    await this.dataClient.configureDatabaseUser({ organizationId, password });
   }
 
   /**
@@ -486,16 +392,7 @@ export class DataClient {
    * @returns Hostname of the federated database
    */
   async getDatabaseConnection(organizationId: string) {
-    const { dataService: service } = this;
-
-    const req = new dataPb.GetDatabaseConnectionRequest();
-    req.setOrganizationId(orgId);
-
-    const response = await promisify<
-      dataPb.GetDatabaseConnectionRequest,
-      dataPb.GetDatabaseConnectionResponse
-    >(service.getDatabaseConnection.bind(service), req);
-    return response.getHostname();
+    return (await this.dataClient.getDatabaseConnection({ organizationId })).hostname;
   }
 
   /**
@@ -505,26 +402,10 @@ export class DataClient {
    * @param datasetId The ID of the dataset to be added to
    */
   async addBinaryDataToDatasetByIds(ids: BinaryID[], datasetId: string) {
-    const { dataService: service } = this;
-
-    const binaryIds: dataPb.BinaryID[] = ids.map(
-      ({ fileId, organizationId, locationId }) => {
-        const binaryId = new dataPb.BinaryID();
-        binaryId.setFileId(fileId);
-        binaryId.setOrganizationId(organizationId);
-        binaryId.setLocationId(locationId);
-        return binaryId;
-      }
-    );
-
-    const req = new dataPb.AddBinaryDataToDatasetByIDsRequest();
-    req.setBinaryIdsList(binaryIds);
-    req.setDatasetId(datasetId);
-
-    await promisify<
-      dataPb.AddBinaryDataToDatasetByIDsRequest,
-      dataPb.AddBinaryDataToDatasetByIDsResponse
-    >(service.addBinaryDataToDatasetByIDs.bind(service), req);
+    await this.dataClient.addBinaryDataToDatasetByIDs({
+      binaryIds: ids,
+      datasetId,
+    });
   }
 
   /**
@@ -534,26 +415,10 @@ export class DataClient {
    * @param datasetId The ID of the dataset to be removed from
    */
   async removeBinaryDataFromDatasetByIds(ids: BinaryID[], datasetId: string) {
-    const { dataService: service } = this;
-
-    const binaryIds: dataPb.BinaryID[] = ids.map(
-      ({ fileId, organizationId, locationId }) => {
-        const binaryId = new dataPb.BinaryID();
-        binaryId.setFileId(fileId);
-        binaryId.setOrganizationId(organizationId);
-        binaryId.setLocationId(locationId);
-        return binaryId;
-      }
-    );
-
-    const req = new dataPb.RemoveBinaryDataFromDatasetByIDsRequest();
-    req.setBinaryIdsList(binaryIds);
-    req.setDatasetId(datasetId);
-
-    await promisify<
-      dataPb.RemoveBinaryDataFromDatasetByIDsRequest,
-      dataPb.RemoveBinaryDataFromDatasetByIDsResponse
-    >(service.removeBinaryDataFromDatasetByIDs.bind(service), req);
+    await this.dataClient.removeBinaryDataFromDatasetByIDs({
+      binaryIds: ids,
+      datasetId,
+    });
   }
 
   /**
@@ -564,17 +429,7 @@ export class DataClient {
    * @returns The ID of the dataset
    */
   async createDataset(name: string, organizationId: string) {
-    const { datasetService: service } = this;
-
-    const req = new datasetPb.CreateDatasetRequest();
-    req.setName(name);
-    req.setOrganizationId(orgId);
-
-    const response = await promisify<
-      datasetPb.CreateDatasetRequest,
-      datasetPb.CreateDatasetResponse
-    >(service.createDataset.bind(service), req);
-    return response.getId();
+    return (await this.datasetClient.createDataset({ name, organizationId })).id;
   }
 
   /**
@@ -583,15 +438,7 @@ export class DataClient {
    * @param id The ID of the dataset.
    */
   async deleteDataset(id: string) {
-    const { datasetService: service } = this;
-
-    const req = new datasetPb.DeleteDatasetRequest();
-    req.setId(id);
-
-    await promisify<
-      datasetPb.DeleteDatasetRequest,
-      datasetPb.DeleteDatasetResponse
-    >(service.deleteDataset.bind(service), req);
+    await this.datasetClient.deleteDataset({ id });
   }
 
   /**
@@ -601,16 +448,7 @@ export class DataClient {
    * @param name The new name of the dataset
    */
   async renameDataset(id: string, name: string) {
-    const { datasetService: service } = this;
-
-    const req = new datasetPb.RenameDatasetRequest();
-    req.setId(id);
-    req.setName(name);
-
-    await promisify<
-      datasetPb.RenameDatasetRequest,
-      datasetPb.RenameDatasetResponse
-    >(service.renameDataset.bind(service), req);
+    await this.datasetClient.renameDataset({ id, name });
   }
 
   /**
@@ -620,23 +458,14 @@ export class DataClient {
    * @returns The list of datasets in the organization
    */
   async listDatasetsByOrganizationID(organizationId: string) {
-    const { datasetService: service } = this;
-
-    const req = new datasetPb.ListDatasetsByOrganizationIDRequest();
-    req.setOrganizationId(orgId);
-
-    const response = await promisify<
-      datasetPb.ListDatasetsByOrganizationIDRequest,
-      datasetPb.ListDatasetsByOrganizationIDResponse
-    >(service.listDatasetsByOrganizationID.bind(service), req);
-
-    const datasets: Dataset[] = [];
-    for (const set of response.getDatasetsList()) {
-      const dataset: Dataset = set.toObject();
-      dataset.created = set.getTimeCreated()?.toDate();
-      datasets.push(dataset);
-    }
-    return datasets;
+    return (await this.datasetClient.listDatasetsByOrganizationID({
+      organizationId,
+    })).datasets.map((ds) => {
+      return {
+        created: ds.timeCreated?.toDate(),
+        ...ds,
+      } as Dataset;
+    });
   }
 
   /**
@@ -646,23 +475,14 @@ export class DataClient {
    * @returns The list of datasets
    */
   async listDatasetsByIds(ids: string[]) {
-    const { datasetService: service } = this;
-
-    const req = new datasetPb.ListDatasetsByIDsRequest();
-    req.setIdsList(ids);
-
-    const response = await promisify<
-      datasetPb.ListDatasetsByIDsRequest,
-      datasetPb.ListDatasetsByIDsResponse
-    >(service.listDatasetsByIDs.bind(service), req);
-
-    const datasets: Dataset[] = [];
-    for (const set of response.getDatasetsList()) {
-      const dataset: Dataset = set.toObject();
-      dataset.created = set.getTimeCreated()?.toDate();
-      datasets.push(dataset);
-    }
-    return datasets;
+    return (await this.datasetClient.listDatasetsByIDs({
+      ids,
+    })).datasets.map((ds) => {
+      return {
+        created: ds.timeCreated?.toDate(),
+        ...ds,
+      } as Dataset;
+    });
   }
 
   /**
@@ -690,7 +510,7 @@ export class DataClient {
    * @returns The file ID of the uploaded data
    */
   async tabularDataCaptureUpload(
-    tabularData: Record<string, googleStructPb.JavaScriptValue>[],
+    tabularData: Record<string, JsonValue>[],
     partId: string,
     componentType: string,
     componentName: string,
@@ -702,41 +522,38 @@ export class DataClient {
       throw new Error('dataRequestTimes and data lengths must be equal.');
     }
 
-    const { dataSyncService: service } = this;
-
-    const metadata = new dataSyncPb.UploadMetadata();
-    metadata.setPartId(partId);
-    metadata.setComponentType(componentType);
-    metadata.setComponentName(componentName);
-    metadata.setMethodName(methodName);
-    metadata.setType(dataSyncPb.DataType.DATA_TYPE_TABULAR_SENSOR);
-    metadata.setTagsList(tags ?? []);
+    const metadata = new dataSyncPb.UploadMetadata({
+      partId,
+      componentType,
+      componentName,
+      methodName,
+      type: dataSyncPb.DataType.TABULAR_SENSOR,
+      tags,
+    });
 
     const sensorContents: dataSyncPb.SensorData[] = [];
     for (const [i, data] of tabularData.entries()) {
-      const sensorData = new dataSyncPb.SensorData();
-
       const sensorMetadata = new dataSyncPb.SensorMetadata();
       const dates = dataRequestTimes[i];
       if (dates) {
-        sensorMetadata.setTimeRequested(Timestamp.fromDate(dates[0]));
-        sensorMetadata.setTimeReceived(Timestamp.fromDate(dates[1]));
+        sensorMetadata.timeRequested = Timestamp.fromDate(dates[0]);
+        sensorMetadata.timeReceived = Timestamp.fromDate(dates[1]);
       }
-      sensorData.setMetadata(sensorMetadata);
-      sensorData.setStruct(googleStructPb.Struct.fromJavaScript(data));
-
-      sensorContents.push(sensorData);
+      sensorContents.push(new dataSyncPb.SensorData({
+        metadata: sensorMetadata,
+        data: {
+          case: "struct",
+          value: data,
+        },
+      }));
     }
 
-    const req = new dataSyncPb.DataCaptureUploadRequest();
-    req.setMetadata(metadata);
-    req.setSensorContentsList(sensorContents);
+    const req = new dataSyncPb.DataCaptureUploadRequest({
+      metadata,
+      sensorContents,
+    });
 
-    const response = await promisify<
-      dataSyncPb.DataCaptureUploadRequest,
-      dataSyncPb.DataCaptureUploadResponse
-    >(service.dataCaptureUpload.bind(service), req);
-    return response.getFileId();
+    return (await this.dataSyncClient.dataCaptureUpload(req)).fileId;
   }
 
   /**
@@ -773,37 +590,33 @@ export class DataClient {
     dataRequestTimes: [Date, Date],
     tags?: string[]
   ) {
-    const { dataSyncService: service } = this;
-
     const metadata = new dataSyncPb.UploadMetadata({
-      partId
+      partId,
+      componentType,
+      componentName,
+      methodName,
+      type: dataSyncPb.DataType.BINARY_SENSOR,
+      tags,
+      fileExtension,
     });
-    metadata.setPartId(partId);
-    metadata.setComponentType(componentType);
-    metadata.setComponentName(componentName);
-    metadata.setMethodName(methodName);
-    metadata.setType(dataSyncPb.DataType.DATA_TYPE_BINARY_SENSOR);
-    metadata.setTagsList(tags ?? []);
-    if (fileExtension) {
-      metadata.setFileExtension(fileExtension);
-    }
 
-    const sensorData = new dataSyncPb.SensorData();
-    const sensorMetadata = new dataSyncPb.SensorMetadata();
-    sensorMetadata.setTimeRequested(Timestamp.fromDate(dataRequestTimes[0]));
-    sensorMetadata.setTimeReceived(Timestamp.fromDate(dataRequestTimes[1]));
-    sensorData.setMetadata(sensorMetadata);
-    sensorData.setBinary(binaryData);
+    const sensorData = new dataSyncPb.SensorData({
+      metadata: {
+        timeRequested: Timestamp.fromDate(dataRequestTimes[0]),
+        timeReceived: Timestamp.fromDate(dataRequestTimes[1]),
+      },
+      data: {
+        case: "binary",
+        value: binaryData,
+      }
+    });
 
-    const req = new dataSyncPb.DataCaptureUploadRequest();
-    req.setMetadata(metadata);
-    req.setSensorContentsList([sensorData]);
+    const req = new dataSyncPb.DataCaptureUploadRequest({
+      metadata,
+      sensorContents: [sensorData],
+    });
 
-    const response = await promisify<
-      dataSyncPb.DataCaptureUploadRequest,
-      dataSyncPb.DataCaptureUploadResponse
-    >(service.dataCaptureUpload.bind(service), req);
-    return response.getFileId();
+    return (await this.dataSyncClient.dataCaptureUpload(req)).fileId;
   }
 
   // eslint-disable-next-line class-methods-use-this

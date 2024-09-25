@@ -1,22 +1,16 @@
+import type { Struct } from '@bufbuild/protobuf';
 import { createPromiseClient, type PromiseClient, type Transport } from '@connectrpc/connect';
-import { type RpcOptions } from '@improbable-eng/grpc-web/dist/typings/client.d';
-import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 import {
   PackageType,
-  type PackageTypeMap,
 } from '../gen/app/packages/v1/packages_pb';
 import { AppService } from '../gen/app/v1/app_connect';
-import type { FragmentVisibilityMap } from '../gen/app/v1/app_pb';
 import * as pb from '../gen/app/v1/app_pb';
-import { AppServiceClient } from '../gen/app/v1/app_pb_service';
-import { type LogEntry } from '../gen/common/v1/common_pb';
-import type { StructType } from '../types';
-import { promisify } from '../utils';
+import type { LogEntry } from '../gen/common/v1/common_pb';
 
 /**
  * Creates an Authorization object from auth details.
  *
- * @param orgId The ID of the organization to create the role under
+ * @param organizationId The ID of the organization to create the role under
  * @param entityId The ID of the entity the role belongs to (e.g., a user ID)
  * @param role The role to add ("owner" or "operator")
  * @param resourceType The type of resource to create the role for ("robot",
@@ -26,42 +20,40 @@ import { promisify } from '../utils';
  * @param resourceId The ID of the resource the role is being created for
  */
 export const createAuth = (
-  orgId: string,
+  organizationId: string,
   entityId: string,
   role: string,
   resourceType: string,
   identityType: string,
   resourceId: string
 ): pb.Authorization => {
-  const auth = new pb.Authorization();
-  auth.setAuthorizationType('role');
-  auth.setIdentityId(entityId);
-  auth.setIdentityType(identityType);
-  auth.setAuthorizationId(`${resourceType}_${role}`);
-  auth.setResourceType(resourceType);
-  auth.setOrganizationId(orgId);
-  auth.setResourceId(resourceId);
-  auth.setOrganizationId(orgId);
-
-  return auth;
+  return new pb.Authorization({
+    authorizationType: 'role',
+    identityId: entityId,
+    identityType,
+    authorizationId: `${resourceType}_${role}`,
+    resourceType,
+    organizationId,
+    resourceId,
+  });
 };
 
 /**
  * Creates an Authorization object specifically for a new API key.
  *
- * @param orgId The ID of the organization to create the role under
+ * @param organizationId The ID of the organization to create the role under
  * @param role The role to add ("owner" or "operator")
  * @param resourceType The type of resource to create the role for ("robot",
  *   "location", or "organization")
  * @param resourceId The ID of the resource the role is being created for
  */
 export const createAuthForNewAPIKey = (
-  orgId: string,
+  organizationId: string,
   role: string,
   resourceType: string,
   resourceId: string
 ): pb.Authorization => {
-  return createAuth(orgId, '', role, resourceType, 'api-key', resourceId);
+  return createAuth(organizationId, '', role, resourceType, 'api-key', resourceId);
 };
 
 /**
@@ -77,12 +69,11 @@ export const createPermission = (
   resourceId: string,
   permissions: string[]
 ): pb.AuthorizedPermissions => {
-  const permission = new pb.AuthorizedPermissions();
-  permission.setResourceType(resourceType);
-  permission.setResourceId(resourceId);
-  permission.setPermissionsList(permissions);
-
-  return permission;
+  return new pb.AuthorizedPermissions({
+    resourceType,
+    resourceId,
+    permissions,
+  });
 };
 
 export class AppClient {
@@ -99,16 +90,7 @@ export class AppClient {
    * @returns The user's ID
    */
   async getUserIDByEmail(email: string): Promise<string> {
-    const { service } = this;
-
-    const req = new pb.GetUserIDByEmailRequest();
-    req.setEmail(email);
-
-    const response = await promisify<
-      pb.GetUserIDByEmailRequest,
-      pb.GetUserIDByEmailResponse
-    >(service.getUserIDByEmail.bind(service), req);
-    return response.getUserId();
+    return (await this.client.getUserIDByEmail({ email })).userId;
   }
 
   /**
@@ -119,18 +101,8 @@ export class AppClient {
    */
   async createOrganization(
     name: string
-  ): Promise<pb.Organization.AsObject | undefined> {
-    const { service } = this;
-
-    const req = new pb.CreateOrganizationRequest();
-    req.setName(name);
-
-    const response = await promisify<
-      pb.CreateOrganizationRequest,
-      pb.CreateOrganizationResponse
-    >(service.createOrganization.bind(service), req);
-    const org = response.getOrganization();
-    return org?.toObject();
+  ): Promise<pb.Organization | undefined> {
+    return (await this.client.createOrganization({ name })).organization;
   }
 
   /**
@@ -138,15 +110,8 @@ export class AppClient {
    *
    * @returns The organization list
    */
-  async listOrganizations(): Promise<pb.Organization.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListOrganizationsRequest();
-
-    const response = await promisify<
-      pb.ListOrganizationsRequest,
-      pb.ListOrganizationsResponse
-    >(service.listOrganizations.bind(service), req);
-    return response.toObject().organizationsList;
+  async listOrganizations(): Promise<pb.Organization[]> {
+    return (await this.client.listOrganizations({})).organizations;
   }
 
   /**
@@ -157,16 +122,8 @@ export class AppClient {
    */
   async getOrganizationsWithAccessToLocation(
     locationId: string
-  ): Promise<pb.OrganizationIdentity.AsObject[]> {
-    const { service } = this;
-    const req = new pb.GetOrganizationsWithAccessToLocationRequest();
-    req.setLocationId(locationId);
-
-    const response = await promisify<
-      pb.GetOrganizationsWithAccessToLocationRequest,
-      pb.GetOrganizationsWithAccessToLocationResponse
-    >(service.getOrganizationsWithAccessToLocation.bind(service), req);
-    return response.toObject().organizationIdentitiesList;
+  ): Promise<pb.OrganizationIdentity[]> {
+    return (await this.client.getOrganizationsWithAccessToLocation({ locationId })).organizationIdentities;
   }
 
   /**
@@ -177,36 +134,20 @@ export class AppClient {
    */
   async listOrganizationsByUser(
     userId: string
-  ): Promise<pb.OrgDetails.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListOrganizationsByUserRequest();
-    req.setUserId(userId);
-
-    const response = await promisify<
-      pb.ListOrganizationsByUserRequest,
-      pb.ListOrganizationsByUserResponse
-    >(service.listOrganizationsByUser.bind(service), req);
-    return response.toObject().orgsList;
+  ): Promise<pb.OrgDetails[]> {
+    return (await this.client.listOrganizationsByUser({ userId })).orgs;
   }
 
   /**
    * Get details about an organization.
    *
-   * @param orgId The ID of the organization
+   * @param organizationId The ID of the organization
    * @returns Details about the organization, if it exists
    */
   async getOrganization(
-    orgId: string
-  ): Promise<pb.Organization.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.GetOrganizationRequest();
-    req.setOrganizationId(orgId);
-
-    const response = await promisify<
-      pb.GetOrganizationRequest,
-      pb.GetOrganizationResponse
-    >(service.getOrganization.bind(service), req);
-    return response.getOrganization()?.toObject();
+    organizationId: string
+  ): Promise<pb.Organization | undefined> {
+    return (await this.client.getOrganization({ organizationId })).organization;
   }
 
   /**
@@ -218,21 +159,13 @@ export class AppClient {
   async getOrganizationNamespaceAvailability(
     namespace: string
   ): Promise<boolean> {
-    const { service } = this;
-    const req = new pb.GetOrganizationNamespaceAvailabilityRequest();
-    req.setPublicNamespace(namespace);
-
-    const response = await promisify<
-      pb.GetOrganizationNamespaceAvailabilityRequest,
-      pb.GetOrganizationNamespaceAvailabilityResponse
-    >(service.getOrganizationNamespaceAvailability.bind(service), req);
-    return response.getAvailable();
+    return (await this.client.getOrganizationNamespaceAvailability({ publicNamespace: namespace })).available;
   }
 
   /**
    * Updates organization details.
    *
-   * @param orgId The id of the organization to update
+   * @param organizationId The id of the organization to update
    * @param name Optional name to update the organization with
    * @param publicNamespace Optional namespace to update the organization with
    * @param region Optional region to update the organization with
@@ -240,76 +173,47 @@ export class AppClient {
    * @returns The updated organization details
    */
   async updateOrganization(
-    orgId: string,
+    organizationId: string,
     name?: string,
     publicNamespace?: string,
     region?: string,
     cid?: string
-  ): Promise<pb.Organization.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.UpdateOrganizationRequest();
-    req.setOrganizationId(orgId);
-    if (name) {
-      req.setName(name);
-    }
-    if (publicNamespace) {
-      req.setPublicNamespace(publicNamespace);
-    }
-    if (region) {
-      req.setRegion(region);
-    }
-    if (cid) {
-      req.setCid(cid);
-    }
-
-    const response = await promisify<
-      pb.UpdateOrganizationRequest,
-      pb.UpdateOrganizationResponse
-    >(service.updateOrganization.bind(service), req);
-    return response.getOrganization()?.toObject();
+  ): Promise<pb.Organization | undefined> {
+    return (await this.client.updateOrganization({
+      organizationId,
+      name,
+      publicNamespace,
+      region,
+      cid,
+    })).organization;
   }
 
   /**
    * Deletes an organization.
    *
-   * @param orgId The id of the organization to delete
+   * @param organizationId The id of the organization to delete
    */
-  async deleteOrganization(orgId: string) {
-    const { service } = this;
-    const req = new pb.DeleteOrganizationRequest();
-    req.setOrganizationId(orgId);
-
-    await promisify<
-      pb.DeleteOrganizationRequest,
-      pb.DeleteOrganizationResponse
-    >(service.deleteOrganization.bind(service), req);
+  async deleteOrganization(organizationId: string) {
+    await this.client.deleteOrganization({ organizationId });
   }
 
   /**
    * Lists organization memebers and outstanding invites.
    *
-   * @param orgId The id of the organization to query
+   * @param organizationId The id of the organization to query
    * @returns An object containing organization members, pending invites, and
    *   org ID
    */
   async listOrganizationMembers(
-    orgId: string
-  ): Promise<pb.ListOrganizationMembersResponse.AsObject> {
-    const { service } = this;
-    const req = new pb.ListOrganizationMembersRequest();
-    req.setOrganizationId(orgId);
-
-    const response = await promisify<
-      pb.ListOrganizationMembersRequest,
-      pb.ListOrganizationMembersResponse
-    >(service.listOrganizationMembers.bind(service), req);
-    return response.toObject();
+    organizationId: string
+  ): Promise<pb.ListOrganizationMembersResponse> {
+    return this.client.listOrganizationMembers({ organizationId });
   }
 
   /**
    * Creates a new invitation to join an organization.
    *
-   * @param orgId The id of the organization to create the invite for
+   * @param organizationId The id of the organization to create the invite for
    * @param email The email address of the user to generate an invite for
    * @param authorizations The authorizations to associate with the new invite
    * @param sendEmailInvite Bool of whether to send an email invite (true) or
@@ -317,140 +221,91 @@ export class AppClient {
    * @returns The organization invite
    */
   async createOrganizationInvite(
-    orgId: string,
+    organizationId: string,
     email: string,
     authorizations: pb.Authorization[],
     sendEmailInvite = true
-  ): Promise<pb.OrganizationInvite.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.CreateOrganizationInviteRequest();
-    req.setOrganizationId(orgId);
-    req.setEmail(email);
-    req.setAuthorizationsList(authorizations);
-    req.setSendEmailInvite(sendEmailInvite);
-
-    const response = await promisify<
-      pb.CreateOrganizationInviteRequest,
-      pb.CreateOrganizationInviteResponse
-    >(service.createOrganizationInvite.bind(service), req);
-    return response.getInvite()?.toObject();
+  ): Promise<pb.OrganizationInvite | undefined> {
+    return (await this.client.createOrganizationInvite({
+      organizationId,
+      email,
+      authorizations,
+      sendEmailInvite,
+    })).invite;
   }
 
   /**
    * Updates authorizations for an existing org invite.
    *
-   * @param orgId The id of the organization
+   * @param organizationId The id of the organization
    * @param email The email address associated with the invite
    * @param addAuthsList List of authorizations to add to the invite
    * @param removeAuthsList List of authorizations to remove from the invite
    * @returns The organization invite
    */
   async updateOrganizationInviteAuthorizations(
-    orgId: string,
+    organizationId: string,
     email: string,
     addAuthsList: pb.Authorization[],
     removeAuthsList: pb.Authorization[]
-  ): Promise<pb.OrganizationInvite.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.UpdateOrganizationInviteAuthorizationsRequest();
-    req.setOrganizationId(orgId);
-    req.setEmail(email);
-    req.setAddAuthorizationsList(addAuthsList);
-    req.setRemoveAuthorizationsList(removeAuthsList);
-
-    const response = await promisify<
-      pb.UpdateOrganizationInviteAuthorizationsRequest,
-      pb.UpdateOrganizationInviteAuthorizationsResponse
-    >(service.updateOrganizationInviteAuthorizations.bind(service), req);
-    return response.getInvite()?.toObject();
+  ): Promise<pb.OrganizationInvite | undefined> {
+    return (await this.client.updateOrganizationInviteAuthorizations({
+      organizationId,
+      email,
+      addAuthorizations: addAuthsList,
+      removeAuthorizations: removeAuthsList,
+    })).invite;
   }
 
   /**
    * Removes a member from an organization.
    *
-   * @param orgId The ID of the organization
+   * @param organizationId The ID of the organization
    * @param userId The ID of the user
    */
-  async deleteOrganizationMember(orgId: string, userId: string) {
-    const { service } = this;
-    const req = new pb.DeleteOrganizationMemberRequest();
-    req.setOrganizationId(orgId);
-    req.setUserId(userId);
-
-    await promisify<
-      pb.DeleteOrganizationMemberRequest,
-      pb.DeleteOrganizationMemberResponse
-    >(service.deleteOrganizationMember.bind(service), req);
+  async deleteOrganizationMember(organizationId: string, userId: string) {
+    await this.client.deleteOrganizationMember({ organizationId, userId });
   }
 
   /**
    * Deletes a pending organization invite.
    *
-   * @param orgId The ID of the organization
+   * @param organizationId The ID of the organization
    * @param email The email associated with the invite to delete
    */
-  async deleteOrganizationInvite(orgId: string, email: string) {
-    const { service } = this;
-    const req = new pb.DeleteOrganizationInviteRequest();
-    req.setOrganizationId(orgId);
-    req.setEmail(email);
-
-    await promisify<
-      pb.DeleteOrganizationInviteRequest,
-      pb.DeleteOrganizationInviteResponse
-    >(service.deleteOrganizationInvite.bind(service), req);
+  async deleteOrganizationInvite(organizationId: string, email: string) {
+    await this.client.deleteOrganizationInvite({ organizationId, email });
   }
 
   /**
    * Resends a pending organization invite.
    *
-   * @param orgId The ID of the organization
+   * @param organizationId The ID of the organization
    * @param email The email associated with the invite to resend
    * @returns The invite
    */
   async resendOrganizationInvite(
-    orgId: string,
+    organizationId: string,
     email: string
-  ): Promise<pb.OrganizationInvite.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.ResendOrganizationInviteRequest();
-    req.setOrganizationId(orgId);
-    req.setEmail(email);
-
-    const response = await promisify<
-      pb.ResendOrganizationInviteRequest,
-      pb.ResendOrganizationInviteResponse
-    >(service.resendOrganizationInvite.bind(service), req);
-    return response.getInvite()?.toObject();
+  ): Promise<pb.OrganizationInvite | undefined> {
+    return (await this.client.resendOrganizationInvite({ organizationId, email })).invite;
   }
 
   /**
    * Creates a new location.
    *
-   * @param orgId The ID of the organization to create the location under
+   * @param organizationId The ID of the organization to create the location under
    * @param name The name of the location to create
    * @param parentLocationId Optional name of a parent location to create the
    *   new location under
    * @returns The location object
    */
   async createLocation(
-    orgId: string,
+    organizationId: string,
     name: string,
     parentLocationId?: string
-  ): Promise<pb.Location.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.CreateLocationRequest();
-    req.setOrganizationId(orgId);
-    req.setName(name);
-    if (parentLocationId) {
-      req.setParentLocationId(parentLocationId);
-    }
-
-    const response = await promisify<
-      pb.CreateLocationRequest,
-      pb.CreateLocationResponse
-    >(service.createLocation.bind(service), req);
-    return response.getLocation()?.toObject();
+  ): Promise<pb.Location | undefined> {
+    return (await this.client.createLocation({ organizationId, name, parentLocationId })).location;
   }
 
   /**
@@ -481,25 +336,13 @@ export class AppClient {
     name?: string,
     parentLocId?: string,
     region?: string
-  ): Promise<pb.Location.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.UpdateLocationRequest();
-    req.setLocationId(locId);
-    if (name) {
-      req.setName(name);
-    }
-    if (parentLocId) {
-      req.setParentLocationId(parentLocId);
-    }
-    if (region) {
-      req.setRegion(region);
-    }
-
-    const response = await promisify<
-      pb.UpdateLocationRequest,
-      pb.UpdateLocationResponse
-    >(service.updateLocation.bind(service), req);
-    return response.getLocation()?.toObject();
+  ): Promise<pb.Location | undefined> {
+    return (await this.client.updateLocation({
+      locationId: locId,
+      name,
+      parentLocationId: parentLocId,
+      region,
+    })).location;
   }
 
   /**
@@ -508,68 +351,37 @@ export class AppClient {
    * @param locId The ID of the location to delete
    */
   async deleteLocation(locId: string) {
-    const { service } = this;
-    const req = new pb.DeleteLocationRequest();
-    req.setLocationId(locId);
-
-    await promisify<pb.DeleteLocationRequest, pb.DeleteLocationResponse>(
-      service.deleteLocation.bind(service),
-      req
-    );
+    await this.client.deleteLocation({ locationId: locId });
   }
 
   /**
    * Lists all locations under an organization.
    *
-   * @param orgId The ID of the organization to query
+   * @param organizationId The ID of the organization to query
    * @returns A list of locations under the organization
    */
-  async listLocations(orgId: string): Promise<pb.Location.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListLocationsRequest();
-    req.setOrganizationId(orgId);
-
-    const response = await promisify<
-      pb.ListLocationsRequest,
-      pb.ListLocationsResponse
-    >(service.listLocations.bind(service), req);
-    return response.toObject().locationsList;
+  async listLocations(organizationId: string): Promise<pb.Location[]> {
+    return (await this.client.listLocations({ organizationId })).locations;
   }
 
   /**
    * Shares a location with another organization
    *
-   * @param orgId The ID of the organization to share with
+   * @param organizationId The ID of the organization to share with
    * @param locId The ID of the location to share
    */
-  async shareLocation(orgId: string, locId: string) {
-    const { service } = this;
-    const req = new pb.ShareLocationRequest();
-    req.setOrganizationId(orgId);
-    req.setLocationId(locId);
-
-    await promisify<pb.ShareLocationRequest, pb.ShareLocationResponse>(
-      service.shareLocation.bind(service),
-      req
-    );
+  async shareLocation(organizationId: string, locId: string) {
+    await this.client.shareLocation({ organizationId, locationId: locId });
   }
 
   /**
    * Unshares a location with an organization
    *
-   * @param orgId The ID of the organization to unshare with
+   * @param organizationId The ID of the organization to unshare with
    * @param locId The ID of the location to unshare
    */
-  async unshareLocation(orgId: string, locId: string) {
-    const { service } = this;
-    const req = new pb.UnshareLocationRequest();
-    req.setOrganizationId(orgId);
-    req.setLocationId(locId);
-
-    await promisify<pb.UnshareLocationRequest, pb.UnshareLocationResponse>(
-      service.unshareLocation.bind(service),
-      req
-    );
+  async unshareLocation(organizationId: string, locId: string) {
+    await this.client.unshareLocation({ organizationId, locationId: locId });
   }
 
   /**
@@ -580,16 +392,8 @@ export class AppClient {
    */
   async locationAuth(
     locId: string
-  ): Promise<pb.LocationAuth.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.LocationAuthRequest();
-    req.setLocationId(locId);
-
-    const response = await promisify<
-      pb.LocationAuthRequest,
-      pb.LocationAuthResponse
-    >(service.locationAuth.bind(service), req);
-    return response.toObject().auth;
+  ): Promise<pb.LocationAuth | undefined> {
+    return (await this.client.locationAuth({ locationId: locId })).auth;
   }
 
   /**
@@ -600,16 +404,8 @@ export class AppClient {
    */
   async createLocationSecret(
     locId: string
-  ): Promise<pb.LocationAuth.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.CreateLocationSecretRequest();
-    req.setLocationId(locId);
-
-    const response = await promisify<
-      pb.CreateLocationSecretRequest,
-      pb.CreateLocationSecretResponse
-    >(service.createLocationSecret.bind(service), req);
-    return response.toObject().auth;
+  ): Promise<pb.LocationAuth | undefined> {
+    return (await this.client.createLocationSecret({ locationId: locId })).auth;
   }
 
   /**
@@ -619,15 +415,7 @@ export class AppClient {
    * @param secretId The ID of the location secret to delete
    */
   async deleteLocationSecret(locId: string, secretId: string) {
-    const { service } = this;
-    const req = new pb.DeleteLocationSecretRequest();
-    req.setLocationId(locId);
-    req.setSecretId(secretId);
-
-    await promisify<
-      pb.DeleteLocationSecretRequest,
-      pb.DeleteLocationSecretResponse
-    >(service.deleteLocationSecret.bind(service), req);
+    await this.client.deleteLocationSecret({ locationId: locId, secretId });
   }
 
   /**
@@ -636,16 +424,8 @@ export class AppClient {
    * @param id The ID of the robot
    * @returns The `Robot` object
    */
-  async getRobot(id: string): Promise<pb.Robot.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.GetRobotRequest();
-    req.setId(id);
-
-    const response = await promisify<pb.GetRobotRequest, pb.GetRobotResponse>(
-      service.getRobot.bind(service),
-      req
-    );
-    return response.toObject().robot;
+  async getRobot(id: string): Promise<pb.Robot | undefined> {
+    return (await this.client.getRobot({ id })).robot;
   }
 
   /**
@@ -656,16 +436,8 @@ export class AppClient {
    */
   async getRoverRentalRobots(
     orgId: string
-  ): Promise<pb.RoverRentalRobot.AsObject[]> {
-    const { service } = this;
-    const req = new pb.GetRoverRentalRobotsRequest();
-    req.setOrgId(orgId);
-
-    const response = await promisify<
-      pb.GetRoverRentalRobotsRequest,
-      pb.GetRoverRentalRobotsResponse
-    >(service.getRoverRentalRobots.bind(service), req);
-    return response.toObject().robotsList;
+  ): Promise<pb.RoverRentalRobot[]> {
+    return (await this.client.getRoverRentalRobots({ orgId })).robots;
   }
 
   /**
@@ -674,16 +446,8 @@ export class AppClient {
    * @param robotId The ID of the robot to query
    * @returns The list of `RobotPart` objects associated with the robot
    */
-  async getRobotParts(robotId: string): Promise<pb.RobotPart.AsObject[]> {
-    const { service } = this;
-    const req = new pb.GetRobotPartsRequest();
-    req.setRobotId(robotId);
-
-    const response = await promisify<
-      pb.GetRobotPartsRequest,
-      pb.GetRobotPartsResponse
-    >(service.getRobotParts.bind(service), req);
-    return response.toObject().partsList;
+  async getRobotParts(robotId: string): Promise<pb.RobotPart[]> {
+    return (await this.client.getRobotParts({ robotId })).parts;
   }
 
   /**
@@ -692,16 +456,8 @@ export class AppClient {
    * @param id The ID of the requested robot part
    * @returns The robot part and a its json config
    */
-  async getRobotPart(id: string): Promise<pb.GetRobotPartResponse.AsObject> {
-    const { service } = this;
-    const req = new pb.GetRobotPartRequest();
-    req.setId(id);
-
-    const response = await promisify<
-      pb.GetRobotPartRequest,
-      pb.GetRobotPartResponse
-    >(service.getRobotPart.bind(service), req);
-    return response.toObject();
+  async getRobotPart(id: string): Promise<pb.GetRobotPartResponse> {
+    return this.client.getRobotPart({ id });
   }
 
   /**
@@ -722,23 +478,13 @@ export class AppClient {
     filter?: string,
     levels?: string[],
     pageToken = ''
-  ): Promise<pb.GetRobotPartLogsResponse.AsObject> {
-    const { service } = this;
-    const req = new pb.GetRobotPartLogsRequest();
-    req.setId(id);
-    if (filter) {
-      req.setFilter(filter);
-    }
-    if (levels) {
-      req.setLevelsList(levels);
-    }
-    req.setPageToken(pageToken);
-
-    const response = await promisify<
-      pb.GetRobotPartLogsRequest,
-      pb.GetRobotPartLogsResponse
-    >(service.getRobotPartLogs.bind(service), req);
-    return response.toObject();
+  ): Promise<pb.GetRobotPartLogsResponse> {
+    return this.client.getRobotPartLogs({
+      id,
+      filter,
+      levels,
+      pageToken,
+    });
   }
 
   /**
@@ -753,51 +499,18 @@ export class AppClient {
    */
   async tailRobotPartLogs(
     id: string,
-    queue: LogEntry.AsObject[],
+    queue: LogEntry[],
     filter?: string,
     errorsOnly = true
   ) {
-    const { service } = this;
-    const req = new pb.TailRobotPartLogsRequest();
-    req.setId(id);
-    req.setErrorsOnly(errorsOnly);
-    if (filter) {
-      req.setFilter(filter);
+    const stream = this.client.tailRobotPartLogs({
+      id,
+      errorsOnly,
+      filter,
+    })
+    for await (const entry of stream) {
+      entry.logs.forEach((log) => queue.push(log));
     }
-
-    const stream = service.tailRobotPartLogs(req);
-    stream.on('data', (response) => {
-      for (const log of response.toObject().logsList) {
-        queue.push(log);
-      }
-    });
-
-    return new Promise<void>((resolve, reject) => {
-      stream.on('status', (status) => {
-        if (status.code !== 0) {
-          const error = {
-            message: status.details,
-            code: status.code,
-            metadata: status.metadata,
-          };
-          reject(error);
-        }
-      });
-      stream.on('end', (end) => {
-        if (end === undefined) {
-          const error = { message: 'Stream ended without a status code' };
-          reject(error);
-        } else if (end.code !== 0) {
-          const error = {
-            message: end.details,
-            code: end.code,
-            metadata: end.metadata,
-          };
-          reject(error);
-        }
-        resolve();
-      });
-    });
   }
 
   /**
@@ -808,16 +521,8 @@ export class AppClient {
    */
   async getRobotPartHistory(
     id: string
-  ): Promise<pb.RobotPartHistoryEntry.AsObject[]> {
-    const { service } = this;
-    const req = new pb.GetRobotPartHistoryRequest();
-    req.setId(id);
-
-    const response = await promisify<
-      pb.GetRobotPartHistoryRequest,
-      pb.GetRobotPartHistoryResponse
-    >(service.getRobotPartHistory.bind(service), req);
-    return response.toObject().historyList;
+  ): Promise<pb.RobotPartHistoryEntry[]> {
+    return (await this.client.getRobotPartHistory({ id })).history;
   }
 
   /**
@@ -831,19 +536,9 @@ export class AppClient {
   async updateRobotPart(
     id: string,
     name: string,
-    robotConfig: StructType
-  ): Promise<pb.RobotPart.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.UpdateRobotPartRequest();
-    req.setId(id);
-    req.setName(name);
-    req.setRobotConfig(Struct.fromJavaScript(robotConfig));
-
-    const response = await promisify<
-      pb.UpdateRobotPartRequest,
-      pb.UpdateRobotPartResponse
-    >(service.updateRobotPart.bind(service), req);
-    return response.toObject().part;
+    robotConfig: Struct
+  ): Promise<pb.RobotPart | undefined> {
+    return (await this.client.updateRobotPart({ id, name, robotConfig })).part;
   }
 
   /**
@@ -854,16 +549,7 @@ export class AppClient {
    * @returns The ID of the newly-created robot part
    */
   async newRobotPart(robotId: string, partName: string): Promise<string> {
-    const { service } = this;
-    const req = new pb.NewRobotPartRequest();
-    req.setRobotId(robotId);
-    req.setPartName(partName);
-
-    const response = await promisify<
-      pb.NewRobotPartRequest,
-      pb.NewRobotPartResponse
-    >(service.newRobotPart.bind(service), req);
-    return response.getPartId();
+    return (await this.client.newRobotPart({ robotId, partName })).partId;
   }
 
   /**
@@ -872,14 +558,7 @@ export class AppClient {
    * @param partId The ID of the part to delete
    */
   async deleteRobotPart(partId: string) {
-    const { service } = this;
-    const req = new pb.DeleteRobotPartRequest();
-    req.setPartId(partId);
-
-    await promisify<pb.DeleteRobotPartRequest, pb.DeleteRobotPartResponse>(
-      service.deleteRobotPart.bind(service),
-      req
-    );
+    await this.client.deleteRobotPart({ partId });
   }
 
   /**
@@ -890,16 +569,8 @@ export class AppClient {
    */
   async getRobotAPIKeys(
     robotId: string
-  ): Promise<pb.APIKeyWithAuthorizations.AsObject[]> {
-    const { service } = this;
-    const req = new pb.GetRobotAPIKeysRequest();
-    req.setRobotId(robotId);
-
-    const response = await promisify<
-      pb.GetRobotAPIKeysRequest,
-      pb.GetRobotAPIKeysResponse
-    >(service.getRobotAPIKeys.bind(service), req);
-    return response.toObject().apiKeysList;
+  ): Promise<pb.APIKeyWithAuthorizations[]> {
+    return (await this.client.getRobotAPIKeys({ robotId })).apiKeys;
   }
 
   /**
@@ -908,14 +579,7 @@ export class AppClient {
    * @param partId The ID of the part to mark as main
    */
   async markPartAsMain(partId: string) {
-    const { service } = this;
-    const req = new pb.MarkPartAsMainRequest();
-    req.setPartId(partId);
-
-    await promisify<pb.MarkPartAsMainRequest, pb.MarkPartAsMainResponse>(
-      service.markPartAsMain.bind(service),
-      req
-    );
+    await this.client.markPartAsMain({ partId });
   }
 
   /**
@@ -924,14 +588,7 @@ export class AppClient {
    * @param partId The ID of the part to mark for restart
    */
   async markPartForRestart(partId: string) {
-    const { service } = this;
-    const req = new pb.MarkPartForRestartRequest();
-    req.setPartId(partId);
-
-    await promisify<
-      pb.MarkPartForRestartRequest,
-      pb.MarkPartForRestartResponse
-    >(service.markPartForRestart.bind(service), req);
+    await this.client.markPartForRestart({ partId });
   }
 
   /**
@@ -942,16 +599,8 @@ export class AppClient {
    */
   async createRobotPartSecret(
     partId: string
-  ): Promise<pb.RobotPart.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.CreateRobotPartSecretRequest();
-    req.setPartId(partId);
-
-    const response = await promisify<
-      pb.CreateRobotPartSecretRequest,
-      pb.CreateRobotPartSecretResponse
-    >(service.createRobotPartSecret.bind(service), req);
-    return response.toObject().part;
+  ): Promise<pb.RobotPart | undefined> {
+    return (await this.client.createRobotPartSecret({ partId })).part;
   }
 
   /**
@@ -961,15 +610,7 @@ export class AppClient {
    * @param secretId The ID of the secret to delete
    */
   async deleteRobotPartSecret(partId: string, secretId: string) {
-    const { service } = this;
-    const req = new pb.DeleteRobotPartSecretRequest();
-    req.setPartId(partId);
-    req.setSecretId(secretId);
-
-    await promisify<
-      pb.DeleteRobotPartSecretRequest,
-      pb.DeleteRobotPartSecretResponse
-    >(service.deleteRobotPartSecret.bind(service), req);
+    await this.client.deleteRobotPartSecret({ partId, secretId });
   }
 
   /**
@@ -978,16 +619,8 @@ export class AppClient {
    * @param locId The ID of the location to list robots for
    * @returns The list of robot objects
    */
-  async listRobots(locId: string): Promise<pb.Robot.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListRobotsRequest();
-    req.setLocationId(locId);
-
-    const response = await promisify<
-      pb.ListRobotsRequest,
-      pb.ListRobotsResponse
-    >(service.listRobots.bind(service), req);
-    return response.toObject().robotsList;
+  async listRobots(locId: string): Promise<pb.Robot[]> {
+    return (await this.client.listRobots({ locationId: locId })).robots;
   }
 
   /**
@@ -998,16 +631,7 @@ export class AppClient {
    * @returns The new robot's ID
    */
   async newRobot(locId: string, name: string): Promise<string> {
-    const { service } = this;
-    const req = new pb.NewRobotRequest();
-    req.setName(name);
-    req.setLocation(locId);
-
-    const response = await promisify<pb.NewRobotRequest, pb.NewRobotResponse>(
-      service.newRobot.bind(service),
-      req
-    );
-    return response.getId();
+    return (await this.client.newRobot({ name, location: locId })).id;
   }
 
   /**
@@ -1022,18 +646,12 @@ export class AppClient {
     robotId: string,
     locId: string,
     name: string
-  ): Promise<pb.Robot.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.UpdateRobotRequest();
-    req.setId(robotId);
-    req.setLocation(locId);
-    req.setName(name);
-
-    const response = await promisify<
-      pb.UpdateRobotRequest,
-      pb.UpdateRobotResponse
-    >(service.updateRobot.bind(service), req);
-    return response.toObject().robot;
+  ): Promise<pb.Robot | undefined> {
+    return (await this.client.updateRobot({
+      id: robotId,
+      location: locId,
+      name,
+    })).robot;
   }
 
   /**
@@ -1042,20 +660,13 @@ export class AppClient {
    * @param id The ID of the robot to delete
    */
   async deleteRobot(id: string) {
-    const { service } = this;
-    const req = new pb.DeleteRobotRequest();
-    req.setId(id);
-
-    await promisify<pb.DeleteRobotRequest, pb.DeleteRobotResponse>(
-      service.deleteRobot.bind(service),
-      req
-    );
+    await this.client.deleteRobot({ id });
   }
 
   /**
    * Lists all fragments within an organization.
    *
-   * @param orgId The ID of the organization to list fragments for
+   * @param organizationId The ID of the organization to list fragments for
    * @param publicOnly Optional, deprecated boolean. Use fragmentVisibilities
    *   instead. If true then only public fragments will be listed. Defaults to
    *   true
@@ -1067,21 +678,11 @@ export class AppClient {
    * @returns The list of fragment objects
    */
   async listFragments(
-    orgId: string,
+    organizationId: string,
     publicOnly = true,
-    fragmentVisibilities: FragmentVisibilityMap[keyof FragmentVisibilityMap][] = []
-  ): Promise<pb.Fragment.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListFragmentsRequest();
-    req.setOrganizationId(orgId);
-    req.setShowPublic(publicOnly);
-    req.setFragmentVisibilityList(fragmentVisibilities);
-
-    const response = await promisify<
-      pb.ListFragmentsRequest,
-      pb.ListFragmentsResponse
-    >(service.listFragments.bind(service), req);
-    return response.toObject().fragmentsList;
+    fragmentVisibility: pb.FragmentVisibility[] = []
+  ): Promise<pb.Fragment[]> {
+    return (await this.client.listFragments({ organizationId, showPublic: publicOnly, fragmentVisibility })).fragments;
   }
 
   /**
@@ -1090,42 +691,24 @@ export class AppClient {
    * @param id The ID of the fragment to look up
    * @returns The requested fragment
    */
-  async getFragment(id: string): Promise<pb.Fragment.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.GetFragmentRequest();
-    req.setId(id);
-
-    const response = await promisify<
-      pb.GetFragmentRequest,
-      pb.GetFragmentResponse
-    >(service.getFragment.bind(service), req);
-    return response.toObject().fragment;
+  async getFragment(id: string): Promise<pb.Fragment | undefined> {
+    return (await this.client.getFragment({ id })).fragment;
   }
 
   /**
    * Creates a new fragment.
    *
-   * @param orgId The ID of the organization to create the fragment under
+   * @param organizationId The ID of the organization to create the fragment under
    * @param name The name of the new fragment
    * @param config The new fragment's config
    * @returns The newly created fragment
    */
   async createFragment(
-    orgId: string,
+    organizationId: string,
     name: string,
-    config: StructType
-  ): Promise<pb.Fragment.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.CreateFragmentRequest();
-    req.setOrganizationId(orgId);
-    req.setName(name);
-    req.setConfig(Struct.fromJavaScript(config));
-
-    const response = await promisify<
-      pb.CreateFragmentRequest,
-      pb.CreateFragmentResponse
-    >(service.createFragment.bind(service), req);
-    return response.toObject().fragment;
+    config: Struct
+  ): Promise<pb.Fragment | undefined> {
+    return (await this.client.createFragment({ organizationId, name, config })).fragment;
   }
 
   /**
@@ -1147,27 +730,17 @@ export class AppClient {
   async updateFragment(
     id: string,
     name: string,
-    config: StructType,
+    config: Struct,
     makePublic?: boolean,
-    visibility?: keyof pb.FragmentVisibilityMap
-  ): Promise<pb.Fragment.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.UpdateFragmentRequest();
-    req.setId(id);
-    req.setName(name);
-    req.setConfig(Struct.fromJavaScript(config));
-    if (makePublic !== undefined) {
-      req.setPublic(makePublic);
-    }
-    if (visibility !== undefined) {
-      req.setVisibility(pb.FragmentVisibility[visibility]);
-    }
-
-    const response = await promisify<
-      pb.UpdateFragmentRequest,
-      pb.UpdateFragmentResponse
-    >(service.updateFragment.bind(service), req);
-    return response.toObject().fragment;
+    visibility?: pb.FragmentVisibility
+  ): Promise<pb.Fragment | undefined> {
+    return (await this.client.updateFragment({
+      id,
+      name,
+      config,
+      public: makePublic,
+      visibility,
+    })).fragment;
   }
 
   /**
@@ -1176,20 +749,13 @@ export class AppClient {
    * @param id The ID of the fragment to delete
    */
   async deleteFragment(id: string) {
-    const { service } = this;
-    const req = new pb.DeleteFragmentRequest();
-    req.setId(id);
-
-    await promisify<pb.DeleteFragmentRequest, pb.DeleteFragmentResponse>(
-      service.deleteFragment.bind(service),
-      req
-    );
+    await this.client.deleteFragment({ id });
   }
 
   /**
    * Add a role under an organization.
    *
-   * @param orgId The ID of the organization to create the role under
+   * @param organizationId The ID of the organization to create the role under
    * @param entityId The ID of the entity the role belongs to (e.g., a user ID)
    * @param role The role to add ("owner" or "operator")
    * @param resourceType The type of resource to create the role for ("robot",
@@ -1197,34 +763,28 @@ export class AppClient {
    * @param resourceId The ID of the resource the role is being created for
    */
   async addRole(
-    orgId: string,
+    organizationId: string,
     entityId: string,
     role: string,
     resourceType: string,
     resourceId: string
   ) {
-    const { service } = this;
-    const req = new pb.AddRoleRequest();
-    const auth = createAuth(
-      orgId,
-      entityId,
-      role,
-      resourceType,
-      '',
-      resourceId
-    );
-    req.setAuthorization(auth);
-
-    await promisify<pb.AddRoleRequest, pb.AddRoleResponse>(
-      service.addRole.bind(service),
-      req
-    );
+    await this.client.addRole({
+      authorization: createAuth(
+        organizationId,
+        entityId,
+        role,
+        resourceType,
+        '',
+        resourceId
+      )
+    });
   }
 
   /**
    * Removes a role from an organization.
    *
-   * @param orgId The ID of the organization to remove the role from
+   * @param organizationId The ID of the organization to remove the role from
    * @param entityId The ID of the entity the role belongs to (e.g., a user ID)
    * @param role The role to remove ("owner" or "operator")
    * @param resourceType The type of resource to remove the role from ("robot",
@@ -1232,28 +792,22 @@ export class AppClient {
    * @param resourceId The ID of the resource the role is being removes from
    */
   async removeRole(
-    orgId: string,
+    organizationId: string,
     entityId: string,
     role: string,
     resourceType: string,
     resourceId: string
   ) {
-    const { service } = this;
-    const req = new pb.RemoveRoleRequest();
-    const auth = createAuth(
-      orgId,
-      entityId,
-      role,
-      resourceType,
-      '',
-      resourceId
-    );
-    req.setAuthorization(auth);
-
-    await promisify<pb.RemoveRoleRequest, pb.RemoveRoleResponse>(
-      service.removeRole.bind(service),
-      req
-    );
+    await this.client.removeRole({
+      authorization: createAuth(
+        organizationId,
+        entityId,
+        role,
+        resourceType,
+        '',
+        resourceId
+      )
+    });
   }
 
   /**
@@ -1262,42 +816,23 @@ export class AppClient {
    * @param oldAuth The existing authorization
    * @param newAuth The new authorization
    */
-  async changeRole(oldAuth: pb.Authorization, newAuth: pb.Authorization) {
-    const { service } = this;
-    const req = new pb.ChangeRoleRequest();
-    req.setOldAuthorization(oldAuth);
-    req.setNewAuthorization(newAuth);
-
-    await promisify<pb.ChangeRoleRequest, pb.ChangeRoleResponse>(
-      service.changeRole.bind(service),
-      req
-    );
+  async changeRole(oldAuthorization: pb.Authorization, newAuthorization: pb.Authorization) {
+    await this.client.changeRole({ oldAuthorization, newAuthorization })
   }
 
   /**
    * List all authorizations for an organization.
    *
-   * @param orgId The ID of the organization to list authorizations for
+   * @param organizationId The ID of the organization to list authorizations for
    * @param resourceIds Optional list of IDs of resources to list authorizations
    *   for. If not provided, all resources will be included
    * @returns The list of authorizations
    */
   async listAuthorizations(
-    orgId: string,
+    organizationId: string,
     resourceIds?: string[]
-  ): Promise<pb.Authorization.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListAuthorizationsRequest();
-    req.setOrganizationId(orgId);
-    if (resourceIds) {
-      req.setResourceIdsList(resourceIds);
-    }
-
-    const response = await promisify<
-      pb.ListAuthorizationsRequest,
-      pb.ListAuthorizationsResponse
-    >(service.listAuthorizations.bind(service), req);
-    return response.toObject().authorizationsList;
+  ): Promise<pb.Authorization[]> {
+    return (await this.client.listAuthorizations({ organizationId, resourceIds })).authorizations;
   }
 
   /**
@@ -1308,16 +843,8 @@ export class AppClient {
    */
   async checkPermissions(
     permissions: pb.AuthorizedPermissions[]
-  ): Promise<pb.AuthorizedPermissions.AsObject[]> {
-    const { service } = this;
-    const req = new pb.CheckPermissionsRequest();
-    req.setPermissionsList(permissions);
-
-    const response = await promisify<
-      pb.CheckPermissionsRequest,
-      pb.CheckPermissionsResponse
-    >(service.checkPermissions.bind(service), req);
-    return response.toObject().authorizedPermissionsList;
+  ): Promise<pb.AuthorizedPermissions[]> {
+    return (await this.client.checkPermissions({ permissions })).authorizedPermissions;
   }
 
   /**
@@ -1328,40 +855,27 @@ export class AppClient {
    */
   async getRegistryItem(
     itemId: string
-  ): Promise<pb.RegistryItem.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.GetRegistryItemRequest();
-    req.setItemId(itemId);
-
-    const response = await promisify<
-      pb.GetRegistryItemRequest,
-      pb.GetRegistryItemResponse
-    >(service.getRegistryItem.bind(service), req);
-    return response.toObject().item;
+  ): Promise<pb.RegistryItem | undefined> {
+    return (await this.client.getRegistryItem({ itemId })).item;
   }
 
   /**
    * Create a new registry item.
    *
-   * @param orgId The ID of the organization to create the registry item under
+   * @param organizationId The ID of the organization to create the registry item under
    * @param name The name of the registry item
    * @param type The type of the item in the registry.
    */
   async createRegistryItem(
-    orgId: string,
+    organizationId: string,
     name: string,
-    type: keyof PackageTypeMap
+    type: PackageType
   ) {
-    const { service } = this;
-    const req = new pb.CreateRegistryItemRequest();
-    req.setOrganizationId(orgId);
-    req.setName(name);
-    req.setType(PackageType[type]);
-
-    await promisify<
-      pb.CreateRegistryItemRequest,
-      pb.CreateRegistryItemResponse
-    >(service.createRegistryItem.bind(service), req);
+    await this.client.createRegistryItem({
+      organizationId,
+      name,
+      type,
+    });
   }
 
   /**
@@ -1374,27 +888,22 @@ export class AppClient {
    */
   async updateRegistryItem(
     itemId: string,
-    type: keyof PackageTypeMap,
+    type: PackageType,
     description: string,
-    visibility: keyof pb.VisibilityMap
+    visibility: pb.Visibility
   ) {
-    const { service } = this;
-    const req = new pb.UpdateRegistryItemRequest();
-    req.setItemId(itemId);
-    req.setType(PackageType[type]);
-    req.setDescription(description);
-    req.setVisibility(pb.Visibility[visibility]);
-
-    await promisify<
-      pb.UpdateRegistryItemRequest,
-      pb.UpdateRegistryItemResponse
-    >(service.updateRegistryItem.bind(service), req);
+    await this.client.updateRegistryItem({
+      itemId,
+      type,
+      description,
+      visibility,
+    })
   }
 
   /**
    * List all registry items for an organization.
    *
-   * @param orgId The ID of the organization to query registry items for
+   * @param organizationId The ID of the organization to query registry items for
    * @param types A list of types to query. If empty, will not filter on type
    * @param visibilities A list of visibilities to query for. If empty, will not
    *   filter on visibility
@@ -1408,45 +917,24 @@ export class AppClient {
    * @returns The list of registry items
    */
   async listRegistryItems(
-    orgId: string,
-    types: (keyof PackageTypeMap)[],
-    visibilities: (keyof pb.VisibilityMap)[],
+    organizationId: string,
+    types: PackageType[],
+    visibilities: pb.Visibility[],
     platforms: string[],
-    statuses: (keyof pb.RegistryItemStatusMap)[],
+    statuses: pb.RegistryItemStatus[],
     searchTerm?: string,
     pageToken?: string
-  ): Promise<pb.RegistryItem.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListRegistryItemsRequest();
-    req.setOrganizationId(orgId);
-    req.setTypesList(
-      types.map((type) => {
-        return PackageType[type];
-      })
-    );
-    req.setVisibilitiesList(
-      visibilities.map((visibility) => {
-        return pb.Visibility[visibility];
-      })
-    );
-    req.setPlatformsList(platforms);
-    req.setStatusesList(
-      statuses.map((status) => {
-        return pb.RegistryItemStatus[status];
-      })
-    );
-    if (searchTerm) {
-      req.setSearchTerm(searchTerm);
-    }
-    if (pageToken) {
-      req.setPageToken(pageToken);
-    }
-
-    const response = await promisify<
-      pb.ListRegistryItemsRequest,
-      pb.ListRegistryItemsResponse
-    >(service.listRegistryItems.bind(service), req);
-    return response.toObject().itemsList;
+  ): Promise<pb.RegistryItem[]> {
+    const req = new pb.ListRegistryItemsRequest({
+      organizationId,
+      types,
+      visibilities,
+      platforms,
+      statuses,
+      searchTerm,
+      pageToken,
+    });
+    return (await this.client.listRegistryItems(req)).items;
   }
 
   /**
@@ -1455,37 +943,26 @@ export class AppClient {
    * @param itemId The ID of the item to delete
    */
   async deleteRegistryItem(itemId: string) {
-    const { service } = this;
-    const req = new pb.DeleteRegistryItemRequest();
-    req.setItemId(itemId);
-
-    await promisify<
-      pb.DeleteRegistryItemRequest,
-      pb.DeleteRegistryItemResponse
-    >(service.deleteRegistryItem.bind(service), req);
+    await this.client.deleteRegistryItem({
+      itemId,
+    })
   }
 
   /**
    * Creates a new module.
    *
-   * @param orgId The ID of the organization to create the module under
+   * @param organizationId The ID of the organization to create the module under
    * @param name The name of the module
    * @returns The module ID and a URL to its detail page
    */
   async createModule(
-    orgId: string,
+    organizationId: string,
     name: string
-  ): Promise<pb.CreateModuleResponse.AsObject> {
-    const { service } = this;
-    const req = new pb.CreateModuleRequest();
-    req.setOrganizationId(orgId);
-    req.setName(name);
-
-    const response = await promisify<
-      pb.CreateModuleRequest,
-      pb.CreateModuleResponse
-    >(service.createModule.bind(service), req);
-    return response.toObject();
+  ): Promise<pb.CreateModuleResponse> {
+    return this.client.createModule({
+      organizationId,
+      name,
+    })
   }
 
   /**
@@ -1501,26 +978,20 @@ export class AppClient {
    */
   async updateModule(
     moduleId: string,
-    visibility: keyof pb.VisibilityMap,
+    visibility: pb.Visibility,
     url: string,
     description: string,
     models: pb.Model[],
     entrypoint: string
   ): Promise<string> {
-    const { service } = this;
-    const req = new pb.UpdateModuleRequest();
-    req.setModuleId(moduleId);
-    req.setVisibility(pb.Visibility[visibility]);
-    req.setUrl(url);
-    req.setDescription(description);
-    req.setModelsList(models);
-    req.setEntrypoint(entrypoint);
-
-    const response = await promisify<
-      pb.UpdateModuleRequest,
-      pb.UpdateModuleResponse
-    >(service.updateModule.bind(service), req);
-    return response.getUrl();
+    return (await this.client.updateModule({
+      moduleId,
+      visibility,
+      url,
+      description,
+      models,
+      entrypoint,
+    })).url;
   }
 
   /**
@@ -1529,34 +1000,18 @@ export class AppClient {
    * @param moduleId The ID of the module
    * @returns The requested module
    */
-  async getModule(moduleId: string): Promise<pb.Module.AsObject | undefined> {
-    const { service } = this;
-    const req = new pb.GetModuleRequest();
-    req.setModuleId(moduleId);
-
-    const response = await promisify<pb.GetModuleRequest, pb.GetModuleResponse>(
-      service.getModule.bind(service),
-      req
-    );
-    return response.toObject().module;
+  async getModule(moduleId: string): Promise<pb.Module | undefined> {
+    return (await this.client.getModule({ moduleId })).module;
   }
 
   /**
    * Lists all modules for an organization.
    *
-   * @param orgId The ID of the organization to query
+   * @param organizationId The ID of the organization to query
    * @returns The organization's modules
    */
-  async listModules(orgId: string): Promise<pb.Module.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListModulesRequest();
-    req.setOrganizationId(orgId);
-
-    const response = await promisify<
-      pb.ListModulesRequest,
-      pb.ListModulesResponse
-    >(service.listModules.bind(service), req);
-    return response.toObject().modulesList;
+  async listModules(organizationId: string): Promise<pb.Module[]> {
+    return (await this.client.listModules({ organizationId })).modules;
   }
 
   /**
@@ -1570,18 +1025,8 @@ export class AppClient {
   async createKey(
     authorizations: pb.Authorization[],
     name?: string
-  ): Promise<pb.CreateKeyResponse.AsObject> {
-    const { service } = this;
-    const req = new pb.CreateKeyRequest();
-    req.setAuthorizationsList(authorizations);
-    const setName = name ?? new Date().toLocaleString();
-    req.setName(setName);
-
-    const response = await promisify<pb.CreateKeyRequest, pb.CreateKeyResponse>(
-      service.createKey.bind(service),
-      req
-    );
-    return response.toObject();
+  ): Promise<pb.CreateKeyResponse> {
+    return this.client.createKey({ name, authorizations });
   }
 
   /**
@@ -1590,14 +1035,7 @@ export class AppClient {
    * @param id The ID of the key to delete
    */
   async deleteKey(id: string) {
-    const { service } = this;
-    const req = new pb.DeleteKeyRequest();
-    req.setId(id);
-
-    await promisify<pb.DeleteKeyRequest, pb.DeleteKeyResponse>(
-      service.deleteKey.bind(service),
-      req
-    );
+    return await this.client.deleteKey({ id });
   }
 
   /**
@@ -1608,16 +1046,8 @@ export class AppClient {
    */
   async listKeys(
     orgId: string
-  ): Promise<pb.APIKeyWithAuthorizations.AsObject[]> {
-    const { service } = this;
-    const req = new pb.ListKeysRequest();
-    req.setOrgId(orgId);
-
-    const response = await promisify<pb.ListKeysRequest, pb.ListKeysResponse>(
-      service.listKeys.bind(service),
-      req
-    );
-    return response.toObject().apiKeysList;
+  ): Promise<pb.APIKeyWithAuthorizations[]> {
+    return (await this.client.listKeys({ orgId })).apiKeys;
   }
 
   /**
@@ -1626,16 +1056,8 @@ export class AppClient {
    * @param id The ID of the key to rotate
    * @returns The updated key and ID
    */
-  async rotateKey(id: string): Promise<pb.RotateKeyResponse.AsObject> {
-    const { service } = this;
-    const req = new pb.RotateKeyRequest();
-    req.setId(id);
-
-    const response = await promisify<pb.RotateKeyRequest, pb.RotateKeyResponse>(
-      service.rotateKey.bind(service),
-      req
-    );
-    return response.toObject();
+  async rotateKey(id: string): Promise<pb.RotateKeyResponse> {
+    return this.client.rotateKey({ id });
   }
 
   /**
@@ -1646,15 +1068,7 @@ export class AppClient {
    */
   async createKeyFromExistingKeyAuthorizations(
     id: string
-  ): Promise<pb.CreateKeyFromExistingKeyAuthorizationsResponse.AsObject> {
-    const { service } = this;
-    const req = new pb.CreateKeyFromExistingKeyAuthorizationsRequest();
-    req.setId(id);
-
-    const response = await promisify<
-      pb.CreateKeyFromExistingKeyAuthorizationsRequest,
-      pb.CreateKeyFromExistingKeyAuthorizationsResponse
-    >(service.createKeyFromExistingKeyAuthorizations.bind(service), req);
-    return response.toObject();
+  ): Promise<pb.CreateKeyFromExistingKeyAuthorizationsResponse> {
+    return this.client.createKeyFromExistingKeyAuthorizations({ id });
   }
 }

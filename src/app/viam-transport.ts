@@ -1,7 +1,6 @@
 import { dialDirect } from '../rpc';
 
 import type { Transport } from '@connectrpc/connect';
-import { apiVersion } from '../api-version';
 import { clientHeaders } from '../utils';
 
 /**

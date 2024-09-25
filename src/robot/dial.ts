@@ -48,13 +48,8 @@ const dialDirect = async (conf: DialDirectConf): Promise<RobotClient> => {
   }
   const client = new RobotClient(conf.host, undefined, sessOpts, clientConf);
 
-  let creds;
-  if (conf.credential) {
-    creds = conf.credential;
-  }
   await client.connect({
-    authEntity: conf.authEntity,
-    creds,
+    creds: conf.credentials,
     dialTimeout: conf.dialTimeout ?? DIAL_TIMEOUT,
   });
 
@@ -120,10 +115,9 @@ const dialWebRTC = async (conf: DialWebRTCConf): Promise<RobotClient> => {
   const client = new RobotClient(impliedURL, clientConf, sessOpts);
 
   await client.connect({
-    authEntity: conf.authEntity ?? impliedURL,
     priority: conf.priority,
     dialTimeout: conf.dialTimeout ?? DIAL_TIMEOUT,
-    creds: conf.credential,
+    creds: conf.credentials,
   });
 
   // eslint-disable-next-line no-console

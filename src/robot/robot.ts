@@ -1,10 +1,10 @@
+import type { Struct } from '@bufbuild/protobuf';
 import { MachineConnectionEvent } from '../events';
 import type {
   PoseInFrame,
   Transform,
 } from '../gen/common/v1/common_pb';
 import type proto from '../gen/robot/v1/robot_pb';
-import type { Status, StreamStatusResponse } from '../gen/robot/v1/robot_pb';
 import type { ResourceName } from '../types';
 
 export type CloudMetadata = proto.GetCloudMetadataResponse;
@@ -56,7 +56,7 @@ export interface Robot {
    * @group Operations
    * @alpha
    */
-  stopAll(extra?: Map<string, StructType>): Promise<void>;
+  stopAll(extra?: Map<string, Struct>): Promise<void>;
 
   /**
    * Get the configuration of the frame system of a given robot.
